@@ -1,0 +1,261 @@
+#container {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-image: -webkit-repeating-linear-gradient(90deg,
+      transparent,
+      transparent 118px,
+      black 118px,
+      black 120px), -webkit-repeating-linear-gradient(0deg,
+      transparent,
+      transparent 118px,
+      black 118px,
+      black 120px);
+}
+
+#eventArea {
+  -webkit-box-flex: none;
+    -webkit-flex: none;
+    flex: none;
+  height: 100%;
+  overflow-y: scroll
+}
+
+#eventColumn{
+  height: 2400px;
+}
+
+body {
+  margin: 0;
+  font-size: 14px;
+  text-rendering: geometricPrecision;
+  overflow: hidden;
+  height: 100%;
+  background-color: #fff;
+}
+
+body, html {
+  font-family: Roboto,Helvetica,Arial,sans-serif;
+}
+
+div {
+  display: block;
+}
+
+::-webkit-scrollbar {
+  background: transparent;
+  height: 8px;
+  width: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  border: none;
+  -webkit-box-shadow: none;
+  box-shadow: none;
+  background: #ddd;
+  min-height: 40px;
+}
+
+.grid {
+  background-color: #fff;
+  height: 100%;
+  width: 100%;
+  display: -webkit-box;
+  display: -moz-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-flex-direction: column;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.date {
+  display: -webkit-box;
+  display: -moz-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-flex: none;
+  -webkit-flex: none;
+  flex: none;
+}
+
+.dateHeader {
+  white-space: nowrap;
+  display: -webkit-box;
+  display: -moz-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-flex: none;
+  -webkit-flex: none;
+  flex: none;
+  -webkit-flex-direction: column;
+  flex-direction: column;
+}
+
+
+.daysFrame {
+  border-left: #e0e0e0 1px solid;
+  margin-left: 0px;
+  -webkit-box-flex: 1 1 auto;
+  -webkit-flex: 1 1 auto;
+  flex: 1 1 auto;
+  display: -webkit-box;
+  display: -moz-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-flex-direction: column;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+.days {
+  height: 80px;
+  -webkit-box-flex: 1 1 auto;
+  -webkit-flex: 1 1 auto;
+  flex: 1 1 auto;
+  display: -webkit-box;
+  display: -moz-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  overflow: hidden;
+}
+
+.dateColumn {
+  border-right: #e0e0e0 1px solid;
+  overflow: hidden;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+  -webkit-box-flex: 1 1 0%;
+  -webkit-flex: 1 1 0%;
+  flex: 1 1 0%;
+  display: -webkit-box;
+  display: -moz-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+}
+.scrollSpace {
+  overflow: scroll;
+  visibility: hidden;
+  -webkit-box-flex: none;
+  -webkit-flex: none;
+  flex: none;
+}
+.hidden {
+  display: block;
+  visibility: hidden;
+  overflow-y: hidden;
+  height: 0;
+  max-width: 80px;
+}
+
+.flexed {
+  -webkit-box-flex: 1 1 60%;
+  -webkit-flex: 1 1 60%;
+  flex: 1 1 60%;
+}
+
+.time {
+  position: relative;
+  border-top: #e0e0e0 1px solid;
+  -webkit-box-flex: 1 1 auto;
+  -webkit-flex: 1 1 auto;
+  flex: 1 1 auto;
+  display: -webkit-box;
+  display: -moz-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-flex-direction: column;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.timeScroll {
+  display: -webkit-box;
+  display: -moz-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  overflow-y: scroll;
+  -webkit-box-flex: 1 1 auto;
+  -webkit-flex: 1 1 auto;
+  flex: 1 1 auto;
+  -webkit-align-items: flex-start;
+  align-items: flex-start;
+}
+
+.timeHeaderCol {
+  overflow-y: hidden;
+  -webkit-box-flex: none;
+  -webkit-flex: none;
+  flex: none;
+  height: 1152px;
+  display: -webkit-box;
+  display: -moz-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-align-items: flex-start;
+  align-items: flex-start;
+}
+.timeHeader {
+  position: relative;
+  border-right: #e0e0e0 1px solid;
+  background-color: #fff;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+}
+.timeUnit {
+  position: relative;
+  height: 48px;
+  text-align: center;
+}
+
+.unitBlock {
+  display: block;
+  position: relative;
+  top: -6px;
+  font-size: 10px;
+  color: #212121;
+}
+
+.eventArea {
+  display: -webkit-box;
+  display: -moz-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  position: relative;
+}
+
+.grid-row {
+  height: 48px;
+}
+
+.grid-row:after {
+  content: '';
+  border-bottom: #e0e0e0 1px solid;
+  position: absolute;
+  width: 100%;
+  margin-top: -1px;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.timeColumn {
+  border-right: #e0e0e0 1px solid;
+  position: relative;
+  padding-right: 12px;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+  -webkit-box-flex: 1 1 auto;
+  -webkit-flex: 1 1 auto;
+  flex: 1 1 auto;
+}
