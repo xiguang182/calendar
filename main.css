@@ -4,9 +4,13 @@
   background-color: aqua;
   position: absolute;
   z-index: 9999;
+  overflow: hidden;
+}
+
+.eventText {
+  display: block;
   font-size: 10px;
   white-space: nowrap;
-  overflow: hidden;
 }
 
 .drop-target {
