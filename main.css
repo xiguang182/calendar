@@ -67,6 +67,12 @@ div {
   -webkit-box-flex: none;
   -webkit-flex: none;
   flex: none;
+  overflow-y: hidden;
+}
+.date::-webkit-scrollbar {
+  background: transparent;
+  height: 0px;
+  width: 0px;
 }
 
 .dateHeader {
@@ -97,10 +103,13 @@ div {
   display: flex;
   -webkit-flex-direction: column;
   flex-direction: column;
-  overflow: hidden;
   position: relative;
 }
-
+.daysFrame::-webkit-scrollbar {
+  background: transparent;
+  height: 0px;
+  width: 0px;
+}
 .days {
   height: 80px;
   -webkit-box-flex: 1 1 auto;
@@ -111,7 +120,7 @@ div {
   display: -webkit-flex;
   display: -ms-flexbox;
   display: flex;
-  overflow: hidden;
+  /* overflow: hidden; */
 }
 
 .dateColumn {
@@ -127,6 +136,8 @@ div {
   display: -webkit-flex;
   display: -ms-flexbox;
   display: flex;
+
+  min-width: 80px;
 }
 .scrollSpace {
   overflow: scroll;
@@ -246,4 +257,5 @@ div {
   -webkit-box-flex: 1 1 auto;
   -webkit-flex: 1 1 auto;
   flex: 1 1 auto;
+  min-width: 80px;
 }

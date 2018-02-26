@@ -1,5 +1,12 @@
 const timeUnit = 48;
-var currentElement = null;
+let originElement = null;
+let scrollElement = null;
+let dateElement = null;
+let currentElement = null;
+let previousScroll = {
+  left: null,
+  top: null
+}
 // target elements with the "draggable" class
 interact('.draggable')
   .draggable({
@@ -23,12 +30,13 @@ interact('.draggable')
             snapX = position.left + startUnitsX * position.width;
             snapY = position.top + startUnitsY * timeUnit;
           }
+          console.log(currentElement)
           console.log(unitsX,unitsY,position,snapX, snapY)
           return {x: snapX, y: snapY, range: Infinity}
         },
       ],
       range: Infinity,
-      endOnly: true,
+      endOnly: true, // soft snapping
       relativePoints: [ { x: 0, y: 0 } ]
     },
     // enable inertial throwing
@@ -42,8 +50,9 @@ interact('.draggable')
     // enable autoScroll
     autoScroll: true,
     onstart:function(event){
-      console.log(event.target)
+      // console.log(event.target)
       currentElement = event.target;
+
     },
     // call this function on every dragmove event
     onmove: dragMoveListener,
@@ -64,29 +73,36 @@ interact('.draggable')
   function scrollListener(event){
     if(currentElement == null){
       
-      console.log("scrolled",event);
-      return;
+      console.log("scrolled", scrollElement.scrollTop, scrollElement.scrollLeft);
     } else {
-      console.log("scrolled",event.dy);
-    //   let target = currentElement,
-    //     // keep the dragged position in the data-x/data-y attributes
-    //     x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx,
-    //     y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy;
-    //     console.log(event.dx,event.dy);
+      console.log("scrolled");
+      let target = currentElement,
+        // keep the dragged position in the data-x/data-y attributes
+        x = (parseFloat(target.getAttribute('data-x')) || 0) + scrollElement.scrollLeft - previousScroll.left,
+        y = (parseFloat(target.getAttribute('data-y')) || 0) + scrollElement.scrollTop - previousScroll.top;
 
-    // // translate the element
-    // target.style.webkitTransform =
-    // target.style.transform =
-    //   'translate(' + x + 'px, ' + y + 'px)';
+      // translate the element
+      target.style.webkitTransform =
+      target.style.transform =
+        'translate(' + x + 'px, ' + y + 'px)';
 
-    // // update the posiion attributes
-    // target.setAttribute('data-x', x);
-    // target.setAttribute('data-y', y);
+      // update the posiion attributes
+      target.setAttribute('data-x', x);
+      target.setAttribute('data-y', y);
+
+      previousScroll.left = scrollElement.scrollLeft;
+      previousScroll.top = scrollElement.scrollTop;
     }
+    dateElement.scrollLeft = scrollElement.scrollLeft;
   }
   window.onload= ()=>{
     console.log('load')
-    document.getElementById("eventScroll").addEventListener('scroll', scrollListener);
+    originElement = document.getElementById("originPoint");
+    dateElement = document.getElementById("dateScroll");
+    scrollElement = document.getElementById("eventScroll");
+    scrollElement.addEventListener('scroll', scrollListener);
+    previousScroll.left = scrollElement.scrollLeft;
+    previousScroll.top = scrollElement.scrollTop;
   }
   // window.addEventListener("scroll", scrollListener);
 
@@ -95,7 +111,7 @@ interact('.draggable')
         // keep the dragged position in the data-x/data-y attributes
         x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx,
         y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy;
-        console.log(event.dx,event.dy);
+        // console.log(event.dx,event.dy);
 
     // translate the element
     target.style.webkitTransform =
@@ -176,6 +192,9 @@ document.addEventListener('keypress', (event) => {
   if(event.code == 'Digit0'){
     let newEvent = createEventNode();
     alert('keypress event\n\n' + 'key: ' + event.code);
+  }
+  if(event.code == 'Digit9'){
+    alert('Current Element: ' + currentElement);
   }
 });
 
