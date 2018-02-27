@@ -8,9 +8,27 @@
 }
 
 .eventText {
-  display: block;
+  /* display: block; */
   font-size: 10px;
   white-space: nowrap;
+}
+
+.dateText {
+  font-size: 48px;
+  line-height: 36px;
+  position: relative;
+  z-index: 2;
+  margin-left: 16px;
+  margin-top: 16px;
+}
+
+.dayText {
+  font-size: 12px;
+  line-height: 32px;
+  text-transform: capitalize;
+  position: relative;
+  z-index: 2;
+  margin-left: 16px;
 }
 
 .drop-target {
@@ -33,7 +51,9 @@ body, html {
 div {
   display: block;
 }
-
+span {
+  display: block;
+}
 ::-webkit-scrollbar {
   background: transparent;
   height: 8px;
@@ -135,11 +155,11 @@ div {
   -webkit-box-flex: 1 1 0%;
   -webkit-flex: 1 1 0%;
   flex: 1 1 0%;
-  display: -webkit-box;
+  /* display: -webkit-box;
   display: -moz-box;
   display: -webkit-flex;
   display: -ms-flexbox;
-  display: flex;
+  display: flex; */
 
   min-width: 80px;
 }
