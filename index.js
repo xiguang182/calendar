@@ -1,5 +1,6 @@
-const timeUnit = 48;// 3600, 4px = 300 sec
-const unitInMinute = 48 * 60 / timeUnit; 
+const timeUnit = 48;
+// const unitInMinute = 48 * 60 / timeUnit;
+const unitInterval = 15; // in minutes
 let originElement = null;
 let scrollElement = null;
 let dateElement = null;
@@ -9,9 +10,10 @@ let previousScroll = {
   top: null
 }
 let timeSlots = []; 
+const numberOfDays = 7;
 const firstDay = new Date(1519621200000); //Feb26th
 const lastDay = new Date(firstDay);
-lastDay.setDate(firstDay.getDate() + 7);
+lastDay.setDate(firstDay.getDate() + numberOfDays);
 const weekdays = [
   'Sun',
   'Mon',
@@ -61,6 +63,7 @@ window.onload= ()=>{
   previousScroll.left = scrollElement.scrollLeft;
   previousScroll.top = scrollElement.scrollTop;
   console.log(data);
+  initializeTimeArea();
   initializeTimeSlots();
   initializeDateColumn();
   for(let i = 0; i< data.events.length; i++){
@@ -69,112 +72,143 @@ window.onload= ()=>{
 }
 // target elements with the "draggable" class
 interact('.draggable')
-  .draggable({
-    snap: {
-      targets: [
-        function (x, y) {
-          let origin = document.getElementById("originPoint");
-          let position = origin.getBoundingClientRect();
-          let unitsX = Math.round((x - position.left)/ position.width);
-          let snapX = position.left + unitsX * position.width;
-          let unitsY = Math.round((y - position.top)/ timeUnit);
-          let snapY = position.top + unitsY * timeUnit;
-          if(currentElement != null){
+.draggable({
+  snap: {
+    targets: [
+      function (x, y) {
+        let origin = document.getElementById("originPoint");
+        let position = origin.getBoundingClientRect();
+        let unitsX = Math.round((x - position.left)/ position.width);
+        let snapX = position.left + unitsX * position.width;
+        let unitsY = Math.round((y - position.top)/ timeUnit);
+        let snapY = position.top + unitsY * timeUnit;
+        if(currentElement != null){
+          let duration = currentElement.getAttribute('duration');
+          if(isOccupied(unitsX, unitsY, duration / 60 / unitInterval)){
+            //snap back
+            let startUnitsX = currentElement.getAttribute('unit-x') || 0;
+            let startUnitsY = currentElement.getAttribute('unit-y') || 0;
+            snapX = position.left + startUnitsX * position.width;
+            snapY = position.top + startUnitsY * timeUnit;
+          }
+        }
+        return {x: snapX, y: snapY, range: Infinity}
+      },
+    ],
+    range: Infinity,
+    endOnly: true, // soft snapping
+    relativePoints: [ { x: 0, y: 0 } ]
+  },
+  // enable inertial throwing
+  inertia: true,
+  // keep the element within the area of it's parent
+  restrict: {
+    restriction: ".eventArea",
+    endOnly: true,
+    elementRect: { top: 0, left: 0, bottom: 1, right: 1 }
+  },
+  // enable autoScroll
+  autoScroll: true,
+  onstart: interactStart,
+  // call this function on every dragmove event
+  onmove: dragMoveListener,
+  // call this function on every dragend event
+  onend: function (event) {
+    console.log('end')
+    let origin = document.getElementById("originPoint");
+    let position = origin.getBoundingClientRect();
+    let x = parseFloat(event.target.getAttribute('data-x')) || 0;
+    let y = parseFloat(event.target.getAttribute('data-y')) || 0;
+    let previousX = event.target.getAttribute('unit-x');
+    let previousY = event.target.getAttribute('unit-y');
+    let duration = event.target.getAttribute('duration');
+    unitsX = Math.round(x/ position.width);
+    unitsY = Math.round(y/ timeUnit);
+    if(previousX == unitsX && previousY == unitsY){
+      // snpped back
+    } else {
+      event.target.setAttribute('unit-x', unitsX);
+      event.target.setAttribute('unit-y', unitsY);
+      event.target.childNodes[1].innerHTML = compileTimeText(unitsY, duration);
+    }
+    occupy(unitsX, unitsY, duration);
+    currentElement = null;
+  }
+}).resizable({
+  // resize from all edges and corners
+  edges: { left: false, right: false, bottom: true, top: false },
+
+  // keep the edges inside the parent
+  restrictEdges: {
+    outer: 'parent',
+    endOnly: true,
+  },
+
+  snapSize:{
+    targets:[
+      function (x, y){
+        let units = Math.floor((y+1)/timeUnit);
+        if( (y+1) % timeUnit > timeUnit * 0.6){
+          units += 1;
+        }
+        if(units < 1){
+          units = 1;
+        }
+        if(currentElement != null){
+          let unitsX = currentElement.getAttribute('unit-x');
+          let unitsY = currentElement.getAttribute('unit-y');
+          console.log(unitsX, unitsY, units)
+          console.log(timeSlots)
+          if(isOccupied(unitsX, unitsY, units)){
+            //snap back
             let duration = currentElement.getAttribute('duration');
-            if(isOccupied(unitsX, unitsY, duration)){
-              //snap back
-              let startUnitsX = currentElement.getAttribute('unit-x') || 0;
-              let startUnitsY = currentElement.getAttribute('unit-y') || 0;
-              snapX = position.left + startUnitsX * position.width;
-              snapY = position.top + startUnitsY * timeUnit;
+            units = Math.floor(duration / 60 / unitInterval);
+            if( (duration /60 ) % timeUnit > timeUnit * 0.6){
+              units += 1;
+            }
+            if(units < 1){
+              units = 1;
             }
           }
-          return {x: snapX, y: snapY, range: Infinity}
-        },
-      ],
-      range: Infinity,
-      endOnly: true, // soft snapping
-      relativePoints: [ { x: 0, y: 0 } ]
-    },
-    // enable inertial throwing
-    inertia: true,
-    // keep the element within the area of it's parent
-    restrict: {
-      restriction: ".eventArea",
-      endOnly: true,
-      elementRect: { top: 0, left: 0, bottom: 1, right: 1 }
-    },
-    // enable autoScroll
-    autoScroll: true,
-    onstart:function(event){
-      console.log('start');
-      currentElement = event.target;
-      let unitsX = event.target.getAttribute('unit-x');
-      let unitsY = event.target.getAttribute('unit-y');
-      let duration = event.target.getAttribute('duration');
-      vacate(unitsX, unitsY, duration);
-
-    },
-    // call this function on every dragmove event
-    onmove: dragMoveListener,
-    // call this function on every dragend event
-    onend: function (event) {
-      console.log('end')
-      let origin = document.getElementById("originPoint");
-      let position = origin.getBoundingClientRect();
-      let x = parseFloat(event.target.getAttribute('data-x')) || 0;
-      let y = parseFloat(event.target.getAttribute('data-y')) || 0;
-      let previousX = event.target.getAttribute('unit-x');
-      let previousY = event.target.getAttribute('unit-y');
-      let duration = event.target.getAttribute('duration');
-      unitsX = Math.round(x/ position.width);
-      unitsY = Math.round(y/ timeUnit);
-      if(previousX == unitsX && previousY == unitsY){
-        // snpped back
-      } else {
-        event.target.setAttribute('unit-x', unitsX);
-        event.target.setAttribute('unit-y', unitsY);
-        event.target.childNodes[1].innerHTML = compileTimeText(unitsY, duration);
+        }
+        return {y: units * timeUnit - 1 };
       }
-      occupy(unitsX, unitsY, duration);
-      currentElement = null;
-    }
-  });
-
-  function scrollListener(event){
-    if(currentElement == null){
-      
-      // console.log("scrolled", scrollElement.scrollTop, scrollElement.scrollLeft);
+    ],
+    range: Infinity,
+    endOnly: true, // soft snapping
+  },
+  inertia: true,
+  onstart: interactStart,
+  onend: function(event){
+    let height = parseInt(currentElement.style.height);
+    let duration = Math.round((height + 1 )/ timeUnit) * unitInterval * 60;
+    let prevoiusDuration = event.target.getAttribute('duration');
+    let unitsX = event.target.getAttribute('unit-x');
+    let unitsY = event.target.getAttribute('unit-y');
+    if(duration == prevoiusDuration){
+      // snpped back
     } else {
-      // console.log("scrolled");
-      let target = currentElement,
-        // keep the dragged position in the data-x/data-y attributes
-        x = (parseFloat(target.getAttribute('data-x')) || 0) + scrollElement.scrollLeft - previousScroll.left,
-        y = (parseFloat(target.getAttribute('data-y')) || 0) + scrollElement.scrollTop - previousScroll.top;
-
-      // translate the element
-      target.style.webkitTransform =
-      target.style.transform =
-        'translate(' + x + 'px, ' + y + 'px)';
-
-      // update the posiion attributes
-      target.setAttribute('data-x', x);
-      target.setAttribute('data-y', y);
-
-      previousScroll.left = scrollElement.scrollLeft;
-      previousScroll.top = scrollElement.scrollTop;
+      currentElement.setAttribute('duration', duration);
+      event.target.childNodes[1].innerHTML = compileTimeText(unitsY, duration);
     }
-    dateElement.scrollLeft = scrollElement.scrollLeft;
+    occupy(unitsX, unitsY, duration);
+    currentElement = null;
   }
+}).on('resizemove', function (event) {
+  event.target.style.height = event.rect.height + 'px';
+});
 
-  // window.addEventListener("scroll", scrollListener);
 
-  function dragMoveListener (event) {
-    let target = event.target,
-        // keep the dragged position in the data-x/data-y attributes
-        x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx,
-        y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy;
-        // console.log(event.dx,event.dy);
+function scrollListener(event){
+  if(currentElement == null){
+    
+    // console.log("scrolled", scrollElement.scrollTop, scrollElement.scrollLeft);
+  } else {
+    // console.log("scrolled");
+    let target = currentElement,
+      // keep the dragged position in the data-x/data-y attributes
+      x = (parseFloat(target.getAttribute('data-x')) || 0) + scrollElement.scrollLeft - previousScroll.left,
+      y = (parseFloat(target.getAttribute('data-y')) || 0) + scrollElement.scrollTop - previousScroll.top;
 
     // translate the element
     target.style.webkitTransform =
@@ -184,10 +218,44 @@ interact('.draggable')
     // update the posiion attributes
     target.setAttribute('data-x', x);
     target.setAttribute('data-y', y);
-  }
 
-  // this is used later in the resizing and gesture demos
-  window.dragMoveListener = dragMoveListener;
+  }
+  previousScroll.left = scrollElement.scrollLeft;
+  previousScroll.top = scrollElement.scrollTop;
+  dateElement.scrollLeft = scrollElement.scrollLeft;
+}
+
+  
+function interactStart(event){
+  console.log('start');
+  currentElement = event.target;
+  let unitsX = event.target.getAttribute('unit-x');
+  let unitsY = event.target.getAttribute('unit-y');
+  let duration = event.target.getAttribute('duration');
+  vacate(unitsX, unitsY, duration);
+}
+
+// window.addEventListener("scroll", scrollListener);
+
+function dragMoveListener (event) {
+  let target = event.target,
+      // keep the dragged position in the data-x/data-y attributes
+      x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx,
+      y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy;
+      // console.log(event.dx,event.dy);
+
+  // translate the element
+  target.style.webkitTransform =
+  target.style.transform =
+    'translate(' + x + 'px, ' + y + 'px)';
+
+  // update the posiion attributes
+  target.setAttribute('data-x', x);
+  target.setAttribute('data-y', y);
+}
+
+// this is used later in the resizing and gesture demos
+window.dragMoveListener = dragMoveListener;
 
 interact('.timeColumn').dropzone({
   // only accept elements matching this CSS selector
@@ -247,7 +315,7 @@ window.onresize = function(event) {
     events[i].setAttribute('data-y', y);
   }
     
-  console.log(events);
+  // console.log(events);
 };
 
 
@@ -273,7 +341,7 @@ function createEventNode(event){
   team.classList.add('eventText');
   newEvent.appendChild(team);
   let coordinates = timeToCoordinates(new Date(event.start*1000));
-  if(isOccupied(coordinates.unitsX, coordinates.unitsY, event.duration)){
+  if(isOccupied(coordinates.unitsX, coordinates.unitsY, event.duration / 60 / unitInterval)){
     alert('targey time period is checked');
     return;
   }
@@ -284,7 +352,7 @@ function createEventNode(event){
   newEvent.appendChild(timeSpan);
   
   // console.log(coordinates)
-  let height = Math.floor(event.duration / 300) * 4 - 1;
+  let height = Math.floor(event.duration * timeUnit / 60 / unitInterval) - 1;
   let position = originElement.getBoundingClientRect();
   // translate the element
   let x = coordinates.unitsX * position.width;
@@ -318,25 +386,26 @@ function removeEvent(event){
 function timeToCoordinates(time){
   let difference = time.getTime() - firstDay.getTime();
   unitsX = Math.floor(difference / (1000*3600*24));
-  unitsY = Math.floor((difference % (1000*3600*24)) / (1000 * 60 * unitInMinute));
+  unitsY = Math.floor((difference % (1000*3600*24)) / (1000 * 60 * unitInterval));
   return {unitsX, unitsY}
 } 
 
 function compileTimeText(unitsY, duration){
   let additionalMinutes = Math.floor(duration / 60);
-  let startMinutes = ('0' + (unitsY * unitInMinute % 60)).slice(-2);
-  let startHours = Math.floor(unitsY * unitInMinute / 60);
-  startHours = startHours > 12 ? `${startHours - 12}: ${startMinutes} PM` : startHours == 12 ? `${startHours}:${startMinutes} PM` : `${startHours}:${startMinutes} AM`;
-  
-  let endMinutes = ('0' + (unitsY * unitInMinute + additionalMinutes) % 60).slice(-2);
-  let endHours = Math.floor((unitsY * unitInMinute + additionalMinutes) / 60);
-  endHours = endHours > 12 ? `${endHours - 12}: ${endMinutes} PM` : endHours == 12 ? `${endHours}:${endMinutes} PM` : `${endHours}:${endMinutes} AM`;
+  let startHours = muniteToAMPMClock(unitsY * unitInterval);
+  let endHours = muniteToAMPMClock(unitsY * unitInterval + additionalMinutes);
   return startHours + ' - ' + endHours;
 }
 
+function muniteToAMPMClock(minutes){
+  let hour = Math.floor(minutes / 60);
+  let minute = ('0' + (minutes % 60)).slice(-2);
+  return hour > 12 ? `${hour - 12}:${minute}PM` : hour == 12 ? `${hour}:${minute}PM`:`${hour}:${minute}AM`;
+}
+
 function initializeTimeSlots(){
-  for(let i = 0; i < 7; i++){
-    timeSlots.push(Array(24*60/unitInMinute).fill(0));
+  for(let i = 0; i < numberOfDays; i++){
+    timeSlots.push(Array(24*60/unitInterval).fill(0));
   }
 }
 
@@ -357,9 +426,8 @@ function initializeDateColumn(){
   }
 }
 
-function isOccupied(unitsX, unitsY, duration){
-  let numberOfSlots = Math.ceil(duration / 60 / unitInMinute);
-  for(let i = unitsY; i < unitsY + numberOfSlots; i++){
+function isOccupied(unitsX, unitsY, units){
+  for(let i = unitsY; i < unitsY + units; i++){
     if(i < timeSlots[unitsX].length){
       if(timeSlots[unitsX][i] == 1){
         return true;
@@ -370,8 +438,10 @@ function isOccupied(unitsX, unitsY, duration){
 }
 
 function occupy(unitsX, unitsY, duration){
-  let numberOfSlots = Math.ceil(duration / 60 / unitInMinute);
-  for(let i = unitsY; i < unitsY + numberOfSlots; i++){
+  let numberOfSlots = Math.ceil(duration / 60 / unitInterval);
+  console.log("number of slots",numberOfSlots, unitsY)
+  for(let i = unitsY; i < +unitsY + numberOfSlots; i++){
+    console.log(i, +unitsY + numberOfSlots);
     if(i < timeSlots[unitsX].length){
       timeSlots[unitsX][i] = 1;
     }
@@ -379,13 +449,34 @@ function occupy(unitsX, unitsY, duration){
 }
 
 function vacate(unitsX, unitsY, duration){
-  let numberOfSlots = Math.ceil(duration / 60 / unitInMinute);
+  let numberOfSlots = Math.ceil(duration / 60 / unitInterval);
   for(let i = +unitsY; i < (+unitsY + numberOfSlots); i++){
     if(i < timeSlots[unitsX].length){
       timeSlots[unitsX][i] = 0;
     }
   }
 }
+
+function initializeTimeArea(){
+  let gridContainer = document.getElementById('gridContainer');
+  let timeContainer = document.getElementById('timeContainer');
+  let numberOfUnits = 24 * 60 / unitInterval;
+  for(let i = 0; i < numberOfUnits; i++ ){
+    let timeUnit = document.createElement('div');
+    timeUnit.classList.add('timeUnit');
+    let unitBlock = document.createElement('span');
+    unitBlock.classList.add('unitBlock');
+    // unitBlock.innerHTML = i+'unit';
+    unitBlock.innerHTML = muniteToAMPMClock(24*60*i/numberOfUnits);
+    timeUnit.appendChild(unitBlock);
+    timeContainer.appendChild(timeUnit);
+
+    let gridRow = document.createElement('div');
+    gridRow.classList.add('grid-row');
+    gridContainer.appendChild(gridRow);
+  }
+}
+
 
 function updateDatabase(){
   console.log('update database');

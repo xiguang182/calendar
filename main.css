@@ -111,11 +111,13 @@ span {
   flex: none;
   -webkit-flex-direction: column;
   flex-direction: column;
+  width: 47px;
+  border-right: #e0e0e0 1px solid;
 }
 
 
 .daysFrame {
-  border-left: #e0e0e0 1px solid;
+  /* border-left: #e0e0e0 1px solid; */
   margin-left: 0px;
   -webkit-box-flex: 1 1 auto;
   -webkit-flex: 1 1 auto;
@@ -219,7 +221,8 @@ span {
   -webkit-box-flex: none;
   -webkit-flex: none;
   flex: none;
-  height: 1152px;
+  /* height: 1152px; */
+  width: 48px;
   display: -webkit-box;
   display: -moz-box;
   display: -webkit-flex;
@@ -234,6 +237,7 @@ span {
   background-color: #fff;
   -webkit-box-sizing: border-box;
   box-sizing: border-box;
+  width: 100%;
 }
 .timeUnit {
   position: relative;
