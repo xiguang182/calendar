@@ -1,16 +1,10 @@
+/**
+ * hard coded values
+ */
 const timeUnit = 48;
 // const unitInMinute = 48 * 60 / timeUnit;
 const unitInterval = 15; // in minutes
-let originElement = null;
-let scrollElement = null;
-let dateElement = null;
-let currentElement = null;
-let previousScroll = {
-  left: null,
-  top: null
-}
-let timeSlots = []; 
-const numberOfDays = 7;
+const numberOfDays = 5;
 const firstDay = new Date(1519621200000); //Feb26th
 const lastDay = new Date(firstDay);
 lastDay.setDate(firstDay.getDate() + numberOfDays);
@@ -23,7 +17,18 @@ const weekdays = [
   'Fri',
   'Sat'
 ]
-
+/**
+ * end
+ */
+let originElement = null;
+let scrollElement = null;
+let dateElement = null;
+let currentElement = null;
+let previousScroll = {
+  left: null,
+  top: null
+}
+let timeSlots = []; 
 let data = {
   events: [
     {
@@ -65,7 +70,8 @@ window.onload= ()=>{
   console.log(data);
   initializeTimeArea();
   initializeTimeSlots();
-  initializeDateColumn();
+  // initializeDateColumn();
+  dyanamicallyInitializeDateColumn();
   for(let i = 0; i< data.events.length; i++){
     createEventNode(data.events[i])
   }
@@ -79,11 +85,18 @@ interact('.draggable')
         let origin = document.getElementById("originPoint");
         let position = origin.getBoundingClientRect();
         let unitsX = Math.round((x - position.left)/ position.width);
+        if(unitsX < 0){
+          unitsX = 0;
+        }
+        if(unitsX >= numberOfDays){
+          unitsX = numberOfDays - 1;
+        }
         let snapX = position.left + unitsX * position.width;
         let unitsY = Math.round((y - position.top)/ timeUnit);
         let snapY = position.top + unitsY * timeUnit;
         if(currentElement != null){
           let duration = currentElement.getAttribute('duration');
+
           if(isOccupied(unitsX, unitsY, duration / 60 / unitInterval)){
             //snap back
             let startUnitsX = currentElement.getAttribute('unit-x') || 0;
@@ -409,6 +422,34 @@ function initializeTimeSlots(){
   }
 }
 
+function dyanamicallyInitializeDateColumn(){
+  let time = new Date(firstDay);
+  let columnContainer = document.getElementById('columnContainer');
+  let scrollSpacer = document.getElementById('scrollSpacer');
+  let eventArea = originElement.parentNode;
+  for(let i = 0; i < numberOfDays; i++){
+    let column = document.createElement('div');
+    column.classList.add('dateColumn');
+    columnContainer.insertBefore(column, scrollSpacer);
+    let date = document.createElement('span');
+    let day = document.createElement('span');
+    date.innerHTML = time.getDate();
+    date.classList.add('dateText');
+    day.innerHTML = weekdays[time.getDay()];
+    day.classList.add('dayText');
+    column.appendChild(date);
+    column.appendChild(day);
+
+    if(i != 0){
+      let eventColumn = document.createElement('div');
+      eventColumn.classList.add('timeColumn');
+      eventArea.appendChild(eventColumn);
+    }
+
+    time.setDate(time.getDate() + 1);
+  }
+}
+
 function initializeDateColumn(){
   let dateColumns = document.getElementsByClassName('dateColumn');
   let length = dateColumns.length;
@@ -427,6 +468,7 @@ function initializeDateColumn(){
 }
 
 function isOccupied(unitsX, unitsY, units){
+  console.log(unitsX, unitsY)
   for(let i = unitsY; i < unitsY + units; i++){
     if(i < timeSlots[unitsX].length){
       if(timeSlots[unitsX][i] == 1){
