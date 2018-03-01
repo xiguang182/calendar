@@ -3,8 +3,8 @@
  */
 const timeUnit = 48;
 // const unitInMinute = 48 * 60 / timeUnit;
-const unitInterval = 15; // in minutes
-const numberOfDays = 5;
+const unitInterval = 5; // in minutes
+const numberOfDays = 7;
 const firstDay = new Date(1519621200000); //Feb26th
 const lastDay = new Date(firstDay);
 lastDay.setDate(firstDay.getDate() + numberOfDays);
@@ -58,6 +58,29 @@ let data = {
   ]
 }
 
+let config = {
+  venues:[
+    {
+      id:1,
+      name:"venue 1",
+    },
+    {
+      id:2,
+      name:"venue 2",
+    },
+    {
+      id:3,
+      name:"venue 3",
+    },
+    {
+      id:4,
+      name:"venue 4",
+    },
+  ]
+}
+
+let numberOfVenues = config.venues.length;
+let numberOfColumns = numberOfDays * numberOfVenues;
 
 window.onload= ()=>{
   console.log('loading')
@@ -88,8 +111,8 @@ interact('.draggable')
         if(unitsX < 0){
           unitsX = 0;
         }
-        if(unitsX >= numberOfDays){
-          unitsX = numberOfDays - 1;
+        if(unitsX >= numberOfColumns){
+          unitsX = numberOfColumns - 1;
         }
         let snapX = position.left + unitsX * position.width;
         let unitsY = Math.round((y - position.top)/ timeUnit);
@@ -121,7 +144,7 @@ interact('.draggable')
     elementRect: { top: 0, left: 0, bottom: 1, right: 1 }
   },
   // enable autoScroll
-  autoScroll: true,
+  // autoScroll: true,
   onstart: interactStart,
   // call this function on every dragmove event
   onmove: dragMoveListener,
@@ -417,7 +440,7 @@ function muniteToAMPMClock(minutes){
 }
 
 function initializeTimeSlots(){
-  for(let i = 0; i < numberOfDays; i++){
+  for(let i = 0; i < numberOfColumns; i++){
     timeSlots.push(Array(24*60/unitInterval).fill(0));
   }
 }
@@ -427,44 +450,54 @@ function dyanamicallyInitializeDateColumn(){
   let columnContainer = document.getElementById('columnContainer');
   let scrollSpacer = document.getElementById('scrollSpacer');
   let eventArea = originElement.parentNode;
+  console.log('fired',numberOfDays,numberOfVenues);
   for(let i = 0; i < numberOfDays; i++){
-    let column = document.createElement('div');
-    column.classList.add('dateColumn');
-    columnContainer.insertBefore(column, scrollSpacer);
-    let date = document.createElement('span');
-    let day = document.createElement('span');
-    date.innerHTML = time.getDate();
-    date.classList.add('dateText');
-    day.innerHTML = weekdays[time.getDay()];
-    day.classList.add('dayText');
-    column.appendChild(date);
-    column.appendChild(day);
+    for(let j = 0; j < numberOfVenues; j++){
+      let column = document.createElement('div');
+      column.classList.add('dateColumn');
+      columnContainer.insertBefore(column, scrollSpacer);
+      let date = document.createElement('span');
+      let day = document.createElement('span');
+      let venue = document.createElement('span');
+      date.innerHTML = time.getDate();
+      date.classList.add('dateText');
+      day.innerHTML = weekdays[time.getDay()];
+      day.classList.add('dayText');
+      venue.innerHTML = config.venues[j].name;
+      venue.classList.add('dayText');
+      column.appendChild(date);
+      column.appendChild(day);
+      column.appendChild(venue);
 
-    if(i != 0){
-      let eventColumn = document.createElement('div');
-      eventColumn.classList.add('timeColumn');
-      eventArea.appendChild(eventColumn);
+      if(i != 0 || j !=0){
+        let eventColumn = document.createElement('div');
+        eventColumn.classList.add('timeColumn');
+        eventArea.appendChild(eventColumn);
+      }
     }
-
     time.setDate(time.getDate() + 1);
   }
-}
+  // for(let i = 0; i < numberOfColumns; i++){
+  //   let column = document.createElement('div');
+  //   column.classList.add('dateColumn');
+  //   columnContainer.insertBefore(column, scrollSpacer);
+  //   let date = document.createElement('span');
+  //   let day = document.createElement('span');
+  //   date.innerHTML = time.getDate();
+  //   date.classList.add('dateText');
+  //   day.innerHTML = weekdays[time.getDay()];
+  //   day.classList.add('dayText');
+  //   column.appendChild(date);
+  //   column.appendChild(day);
 
-function initializeDateColumn(){
-  let dateColumns = document.getElementsByClassName('dateColumn');
-  let length = dateColumns.length;
-  let time = new Date(firstDay);
-  for(let i = 0; i < length; i++){
-    let date = document.createElement('span');
-    let day = document.createElement('span');
-    date.innerHTML = time.getDate();
-    date.classList.add('dateText');
-    day.innerHTML = weekdays[time.getDay()];
-    day.classList.add('dayText');
-    dateColumns[i].appendChild(date);
-    dateColumns[i].appendChild(day);
-    time.setDate(time.getDate() + 1);
-  }
+  //   if(i != 0){
+  //     let eventColumn = document.createElement('div');
+  //     eventColumn.classList.add('timeColumn');
+  //     eventArea.appendChild(eventColumn);
+  //   }
+
+  //   time.setDate(time.getDate() + 1);
+  // }
 }
 
 function isOccupied(unitsX, unitsY, units){
