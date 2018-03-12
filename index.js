@@ -3,8 +3,8 @@
  */
 const timeUnit = 48;
 // const unitInMinute = 48 * 60 / timeUnit;
-const unitInterval = 15; // in minutes
-const numberOfDays = 5;
+const unitInterval = 60; // in minutes
+const numberOfDays = 7;
 const firstDay = new Date(1519621200000); //Feb26th
 const lastDay = new Date(firstDay);
 lastDay.setDate(firstDay.getDate() + numberOfDays);
@@ -54,10 +54,63 @@ let data = {
       title:"event 4 with a super long name abcdabcdabcdabcd",
       start:1519736400,// 27 7am
       duration:3600,
+    },
+    {
+      id:5,
+      title:"event 5",
+      start:1519880700,// 1 0:05am
+      duration:600,
     }
   ]
 }
 
+let config = {
+  venues:[
+    {
+      id:1,
+      name:"venue 1",
+    },
+    // {
+    //   id:2,
+    //   name:"venue 2",
+    // },
+    // {
+    //   id:3,
+    //   name:"venue 3",
+    // },
+    // {
+    //   id:4,
+    //   name:"venue 4",
+    // },
+    // {
+    //   id:5,
+    //   name:"venue 5",
+    // },
+    // {
+    //   id:6,
+    //   name:"venue 6",
+    // },
+    // {
+    //   id:7,
+    //   name:"venue 7",
+    // },
+    // {
+    //   id:8,
+    //   name:"venue 8",
+    // },
+    // {
+    //   id:9,
+    //   name:"venue 9",
+    // },
+    // {
+    //   id:10,
+    //   name:"venue 10",
+    // },
+  ]
+}
+
+let numberOfVenues = config.venues.length;
+let numberOfColumns = numberOfDays * numberOfVenues;
 
 window.onload= ()=>{
   console.log('loading')
@@ -88,8 +141,8 @@ interact('.draggable')
         if(unitsX < 0){
           unitsX = 0;
         }
-        if(unitsX >= numberOfDays){
-          unitsX = numberOfDays - 1;
+        if(unitsX >= numberOfColumns){
+          unitsX = numberOfColumns - 1;
         }
         let snapX = position.left + unitsX * position.width;
         let unitsY = Math.round((y - position.top)/ timeUnit);
@@ -121,13 +174,13 @@ interact('.draggable')
     elementRect: { top: 0, left: 0, bottom: 1, right: 1 }
   },
   // enable autoScroll
-  autoScroll: true,
+  // autoScroll: true,
   onstart: interactStart,
   // call this function on every dragmove event
   onmove: dragMoveListener,
   // call this function on every dragend event
   onend: function (event) {
-    console.log('end')
+    console.log('end');
     let origin = document.getElementById("originPoint");
     let position = origin.getBoundingClientRect();
     let x = parseFloat(event.target.getAttribute('data-x')) || 0;
@@ -193,6 +246,7 @@ interact('.draggable')
   inertia: true,
   onstart: interactStart,
   onend: function(event){
+    console.log('end');
     let height = parseInt(currentElement.style.height);
     let duration = Math.round((height + 1 )/ timeUnit) * unitInterval * 60;
     let prevoiusDuration = event.target.getAttribute('duration');
@@ -341,6 +395,9 @@ document.addEventListener('keypress', (event) => {
   }
 });
 
+function indexOfVenue(id){
+  return 0;
+}
 function createEventNode(event){
   if(lastDay.getTime() <= event.start*1000 || firstDay.getTime() > event.start * 1000){
     console.log('not in this week', lastDay.getTime(), event.start*1000, firstDay.getTime());
@@ -355,7 +412,7 @@ function createEventNode(event){
   newEvent.appendChild(team);
   let coordinates = timeToCoordinates(new Date(event.start*1000));
   if(isOccupied(coordinates.unitsX, coordinates.unitsY, event.duration / 60 / unitInterval)){
-    alert('targey time period is checked');
+    alert('target time period is checked');
     return;
   }
 
@@ -366,6 +423,9 @@ function createEventNode(event){
   
   // console.log(coordinates)
   let height = Math.floor(event.duration * timeUnit / 60 / unitInterval) - 1;
+  if(height < 1){
+    height = 1;
+  }
   let position = originElement.getBoundingClientRect();
   // translate the element
   let x = coordinates.unitsX * position.width;
@@ -398,7 +458,7 @@ function removeEvent(event){
 
 function timeToCoordinates(time){
   let difference = time.getTime() - firstDay.getTime();
-  unitsX = Math.floor(difference / (1000*3600*24));
+  unitsX = Math.floor(difference / (1000*3600*24)) * numberOfVenues + indexOfVenue(0);
   unitsY = Math.floor((difference % (1000*3600*24)) / (1000 * 60 * unitInterval));
   return {unitsX, unitsY}
 } 
@@ -417,7 +477,7 @@ function muniteToAMPMClock(minutes){
 }
 
 function initializeTimeSlots(){
-  for(let i = 0; i < numberOfDays; i++){
+  for(let i = 0; i < numberOfColumns; i++){
     timeSlots.push(Array(24*60/unitInterval).fill(0));
   }
 }
@@ -427,50 +487,63 @@ function dyanamicallyInitializeDateColumn(){
   let columnContainer = document.getElementById('columnContainer');
   let scrollSpacer = document.getElementById('scrollSpacer');
   let eventArea = originElement.parentNode;
+  console.log('fired',numberOfDays,numberOfVenues);
   for(let i = 0; i < numberOfDays; i++){
-    let column = document.createElement('div');
-    column.classList.add('dateColumn');
-    columnContainer.insertBefore(column, scrollSpacer);
-    let date = document.createElement('span');
-    let day = document.createElement('span');
-    date.innerHTML = time.getDate();
-    date.classList.add('dateText');
-    day.innerHTML = weekdays[time.getDay()];
-    day.classList.add('dayText');
-    column.appendChild(date);
-    column.appendChild(day);
+    for(let j = 0; j < numberOfVenues; j++){
+      let column = document.createElement('div');
+      column.classList.add('dateColumn');
+      columnContainer.insertBefore(column, scrollSpacer);
+      let date = document.createElement('span');
+      let day = document.createElement('span');
+      let venue = document.createElement('span');
+      date.innerHTML = time.getDate();
+      date.classList.add('dateText');
+      day.innerHTML = weekdays[time.getDay()];
+      day.classList.add('dayText');
+      venue.innerHTML = config.venues[j].name;
+      venue.classList.add('dayText');
+      column.appendChild(date);
+      column.appendChild(day);
+      column.appendChild(venue);
 
-    if(i != 0){
-      let eventColumn = document.createElement('div');
-      eventColumn.classList.add('timeColumn');
-      eventArea.appendChild(eventColumn);
+      if(i != 0 || j !=0){
+        let eventColumn = document.createElement('div');
+        eventColumn.classList.add('timeColumn');
+        eventArea.appendChild(eventColumn);
+      }
     }
-
     time.setDate(time.getDate() + 1);
   }
+  // for(let i = 0; i < numberOfColumns; i++){
+  //   let column = document.createElement('div');
+  //   column.classList.add('dateColumn');
+  //   columnContainer.insertBefore(column, scrollSpacer);
+  //   let date = document.createElement('span');
+  //   let day = document.createElement('span');
+  //   date.innerHTML = time.getDate();
+  //   date.classList.add('dateText');
+  //   day.innerHTML = weekdays[time.getDay()];
+  //   day.classList.add('dayText');
+  //   column.appendChild(date);
+  //   column.appendChild(day);
+
+  //   if(i != 0){
+  //     let eventColumn = document.createElement('div');
+  //     eventColumn.classList.add('timeColumn');
+  //     eventArea.appendChild(eventColumn);
+  //   }
+
+  //   time.setDate(time.getDate() + 1);
+  // }
 }
 
-function initializeDateColumn(){
-  let dateColumns = document.getElementsByClassName('dateColumn');
-  let length = dateColumns.length;
-  let time = new Date(firstDay);
-  for(let i = 0; i < length; i++){
-    let date = document.createElement('span');
-    let day = document.createElement('span');
-    date.innerHTML = time.getDate();
-    date.classList.add('dateText');
-    day.innerHTML = weekdays[time.getDay()];
-    day.classList.add('dayText');
-    dateColumns[i].appendChild(date);
-    dateColumns[i].appendChild(day);
-    time.setDate(time.getDate() + 1);
-  }
-}
+
 
 function isOccupied(unitsX, unitsY, units){
-  console.log(unitsX, unitsY)
-  for(let i = unitsY; i < unitsY + units; i++){
+  console.log(unitsX, unitsY, units)
+  for(let i = unitsY; i < +unitsY + units; i++){
     if(i < timeSlots[unitsX].length){
+      console.log(timeSlots[unitsX][i])
       if(timeSlots[unitsX][i] == 1){
         return true;
       }
@@ -481,9 +554,9 @@ function isOccupied(unitsX, unitsY, units){
 
 function occupy(unitsX, unitsY, duration){
   let numberOfSlots = Math.ceil(duration / 60 / unitInterval);
-  console.log("number of slots",numberOfSlots, unitsY)
+  // console.log("number of slots",numberOfSlots, unitsY)
   for(let i = unitsY; i < +unitsY + numberOfSlots; i++){
-    console.log(i, +unitsY + numberOfSlots);
+    // console.log(i, +unitsY + numberOfSlots);
     if(i < timeSlots[unitsX].length){
       timeSlots[unitsX][i] = 1;
     }

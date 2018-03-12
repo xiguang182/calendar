@@ -24,7 +24,7 @@
 
 .dayText {
   font-size: 12px;
-  line-height: 32px;
+  line-height: 14px;
   text-transform: capitalize;
   position: relative;
   z-index: 2;
@@ -163,7 +163,7 @@ span {
   display: -ms-flexbox;
   display: flex; */
 
-  min-width: 80px;
+  min-width: 100px;
 }
 .scrollSpace {
   overflow: scroll;
@@ -285,5 +285,5 @@ span {
   -webkit-box-flex: 1 1 auto;
   -webkit-flex: 1 1 auto;
   flex: 1 1 auto;
-  min-width: 80px;
+  min-width: 100px;
 }
