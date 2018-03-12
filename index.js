@@ -3,7 +3,7 @@
  */
 const timeUnit = 48;
 // const unitInMinute = 48 * 60 / timeUnit;
-const unitInterval = 5; // in minutes
+const unitInterval = 60; // in minutes
 const numberOfDays = 7;
 const firstDay = new Date(1519621200000); //Feb26th
 const lastDay = new Date(firstDay);
@@ -54,6 +54,12 @@ let data = {
       title:"event 4 with a super long name abcdabcdabcdabcd",
       start:1519736400,// 27 7am
       duration:3600,
+    },
+    {
+      id:5,
+      title:"event 5",
+      start:1519880700,// 1 0:05am
+      duration:600,
     }
   ]
 }
@@ -64,18 +70,42 @@ let config = {
       id:1,
       name:"venue 1",
     },
-    {
-      id:2,
-      name:"venue 2",
-    },
-    {
-      id:3,
-      name:"venue 3",
-    },
-    {
-      id:4,
-      name:"venue 4",
-    },
+    // {
+    //   id:2,
+    //   name:"venue 2",
+    // },
+    // {
+    //   id:3,
+    //   name:"venue 3",
+    // },
+    // {
+    //   id:4,
+    //   name:"venue 4",
+    // },
+    // {
+    //   id:5,
+    //   name:"venue 5",
+    // },
+    // {
+    //   id:6,
+    //   name:"venue 6",
+    // },
+    // {
+    //   id:7,
+    //   name:"venue 7",
+    // },
+    // {
+    //   id:8,
+    //   name:"venue 8",
+    // },
+    // {
+    //   id:9,
+    //   name:"venue 9",
+    // },
+    // {
+    //   id:10,
+    //   name:"venue 10",
+    // },
   ]
 }
 
@@ -150,7 +180,7 @@ interact('.draggable')
   onmove: dragMoveListener,
   // call this function on every dragend event
   onend: function (event) {
-    console.log('end')
+    console.log('end');
     let origin = document.getElementById("originPoint");
     let position = origin.getBoundingClientRect();
     let x = parseFloat(event.target.getAttribute('data-x')) || 0;
@@ -216,6 +246,7 @@ interact('.draggable')
   inertia: true,
   onstart: interactStart,
   onend: function(event){
+    console.log('end');
     let height = parseInt(currentElement.style.height);
     let duration = Math.round((height + 1 )/ timeUnit) * unitInterval * 60;
     let prevoiusDuration = event.target.getAttribute('duration');
@@ -364,6 +395,9 @@ document.addEventListener('keypress', (event) => {
   }
 });
 
+function indexOfVenue(id){
+  return 0;
+}
 function createEventNode(event){
   if(lastDay.getTime() <= event.start*1000 || firstDay.getTime() > event.start * 1000){
     console.log('not in this week', lastDay.getTime(), event.start*1000, firstDay.getTime());
@@ -378,7 +412,7 @@ function createEventNode(event){
   newEvent.appendChild(team);
   let coordinates = timeToCoordinates(new Date(event.start*1000));
   if(isOccupied(coordinates.unitsX, coordinates.unitsY, event.duration / 60 / unitInterval)){
-    alert('targey time period is checked');
+    alert('target time period is checked');
     return;
   }
 
@@ -389,6 +423,9 @@ function createEventNode(event){
   
   // console.log(coordinates)
   let height = Math.floor(event.duration * timeUnit / 60 / unitInterval) - 1;
+  if(height < 1){
+    height = 1;
+  }
   let position = originElement.getBoundingClientRect();
   // translate the element
   let x = coordinates.unitsX * position.width;
@@ -421,7 +458,7 @@ function removeEvent(event){
 
 function timeToCoordinates(time){
   let difference = time.getTime() - firstDay.getTime();
-  unitsX = Math.floor(difference / (1000*3600*24));
+  unitsX = Math.floor(difference / (1000*3600*24)) * numberOfVenues + indexOfVenue(0);
   unitsY = Math.floor((difference % (1000*3600*24)) / (1000 * 60 * unitInterval));
   return {unitsX, unitsY}
 } 
@@ -500,10 +537,13 @@ function dyanamicallyInitializeDateColumn(){
   // }
 }
 
+
+
 function isOccupied(unitsX, unitsY, units){
-  console.log(unitsX, unitsY)
-  for(let i = unitsY; i < unitsY + units; i++){
+  console.log(unitsX, unitsY, units)
+  for(let i = unitsY; i < +unitsY + units; i++){
     if(i < timeSlots[unitsX].length){
+      console.log(timeSlots[unitsX][i])
       if(timeSlots[unitsX][i] == 1){
         return true;
       }
@@ -514,9 +554,9 @@ function isOccupied(unitsX, unitsY, units){
 
 function occupy(unitsX, unitsY, duration){
   let numberOfSlots = Math.ceil(duration / 60 / unitInterval);
-  console.log("number of slots",numberOfSlots, unitsY)
+  // console.log("number of slots",numberOfSlots, unitsY)
   for(let i = unitsY; i < +unitsY + numberOfSlots; i++){
-    console.log(i, +unitsY + numberOfSlots);
+    // console.log(i, +unitsY + numberOfSlots);
     if(i < timeSlots[unitsX].length){
       timeSlots[unitsX][i] = 1;
     }
