@@ -1,3 +1,4 @@
+'use strict';
 /**
  * hard coded values
  */
@@ -188,8 +189,8 @@ interact('.draggable')
     let previousX = event.target.getAttribute('unit-x');
     let previousY = event.target.getAttribute('unit-y');
     let duration = event.target.getAttribute('duration');
-    unitsX = Math.round(x/ position.width);
-    unitsY = Math.round(y/ timeUnit);
+    let unitsX = Math.round(x/ position.width);
+    let unitsY = Math.round(y/ timeUnit);
     if(previousX == unitsX && previousY == unitsY){
       // snpped back
     } else {
@@ -458,8 +459,8 @@ function removeEvent(event){
 
 function timeToCoordinates(time){
   let difference = time.getTime() - firstDay.getTime();
-  unitsX = Math.floor(difference / (1000*3600*24)) * numberOfVenues + indexOfVenue(0);
-  unitsY = Math.floor((difference % (1000*3600*24)) / (1000 * 60 * unitInterval));
+  let unitsX = Math.floor(difference / (1000*3600*24)) * numberOfVenues + indexOfVenue(0);
+  let unitsY = Math.floor((difference % (1000*3600*24)) / (1000 * 60 * unitInterval));
   return {unitsX, unitsY}
 } 
 
@@ -514,27 +515,6 @@ function dyanamicallyInitializeDateColumn(){
     }
     time.setDate(time.getDate() + 1);
   }
-  // for(let i = 0; i < numberOfColumns; i++){
-  //   let column = document.createElement('div');
-  //   column.classList.add('dateColumn');
-  //   columnContainer.insertBefore(column, scrollSpacer);
-  //   let date = document.createElement('span');
-  //   let day = document.createElement('span');
-  //   date.innerHTML = time.getDate();
-  //   date.classList.add('dateText');
-  //   day.innerHTML = weekdays[time.getDay()];
-  //   day.classList.add('dayText');
-  //   column.appendChild(date);
-  //   column.appendChild(day);
-
-  //   if(i != 0){
-  //     let eventColumn = document.createElement('div');
-  //     eventColumn.classList.add('timeColumn');
-  //     eventArea.appendChild(eventColumn);
-  //   }
-
-  //   time.setDate(time.getDate() + 1);
-  // }
 }
 
 
@@ -581,7 +561,6 @@ function initializeTimeArea(){
     timeUnit.classList.add('timeUnit');
     let unitBlock = document.createElement('span');
     unitBlock.classList.add('unitBlock');
-    // unitBlock.innerHTML = i+'unit';
     unitBlock.innerHTML = muniteToAMPMClock(24*60*i/numberOfUnits);
     timeUnit.appendChild(unitBlock);
     timeContainer.appendChild(timeUnit);
