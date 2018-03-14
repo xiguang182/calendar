@@ -13,8 +13,25 @@ Date column initialization
 # update 2018/02/28
 Change unit concept and dynamic timeUnit render:  
 > the previous unit is related to the blick height which is set to 48px, that is when unit = 48 it means 1 block as a units, similarly 4px means 1/12 block as a units  
-> the new unit is fixed with block size, and the number of blocks will be dynamically rendered. That is, with smaller time interval, more blocks are created
+> the new unit is fixed with block size, and the number of blocks will be dynamically rendered. That is, with smaller time interval, more blocks are created  
 
 Resize from bottom to change duration and coresponding data, vacancy manipulation.  
 # update 2018/03/01 Mile Stone 2
 Change days columns to be dynamically rendered
+# update 2018/03/14   
+create interfaces to communicate with other frame work  
+Also moved initialization from window.onload to functions that will be exported.
+list of exported functions:  
+initializeCalendar(interval, days, initDay, events, venues),  
+clearCalendar(),  
+createEvent(event)  
+
+Dispatched the event:  
+customEventUpdate  
+example payload:  
+{creation:false,  
+duration:"3600",  
+eventID:"3",  
+start:Mon Feb 26 2018 00:00:00 GMT-0500 (Eastern Standard Time) {},  
+title:"event 3",  
+venueID:0}  
