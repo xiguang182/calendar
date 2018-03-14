@@ -1,14 +1,7 @@
 'use strict';
 /**
- * hard coded values
+ * week dictionary
  */
-const timeUnit = 48;
-// const unitInMinute = 48 * 60 / timeUnit;
-const unitInterval = 60; // in minutes
-const numberOfDays = 7;
-const firstDay = new Date(1519621200000); //Feb26th
-const lastDay = new Date(firstDay);
-lastDay.setDate(firstDay.getDate() + numberOfDays);
 const weekdays = [
   'Sun',
   'Mon',
@@ -18,8 +11,9 @@ const weekdays = [
   'Fri',
   'Sat'
 ]
+
 /**
- * end
+ * frequently used DOM data
  */
 let originElement = null;
 let scrollElement = null;
@@ -29,106 +23,29 @@ let previousScroll = {
   left: null,
   top: null
 }
+/**
+ * other global variables
+ */
+const timeUnit = 48; //pixels same as in style sheet
+let unitInterval = null; // in minutes
+let numberOfDays = null;
+let firstDay = null;
+let lastDay = null;
 let timeSlots = []; 
-let data = {
-  events: [
-    {
-      id:1,
-      title:"event 1",
-      start:1519653600,// 26 9am
-      duration:3600,
-    },
-    {
-      id:2,
-      title:"event 2", 
-      start:1519729200,// 27 6am
-      duration:5400,
-    },
-    {
-      id:3,
-      title:"event 3",
-      start:1519567200,// 25 9am
-      duration:3600,
-    },
-    {
-      id:4,
-      title:"event 4 with a super long name abcdabcdabcdabcd",
-      start:1519736400,// 27 7am
-      duration:3600,
-    },
-    {
-      id:5,
-      title:"event 5",
-      start:1519880700,// 1 0:05am
-      duration:600,
-    }
-  ]
-}
-
-let config = {
-  venues:[
-    {
-      id:1,
-      name:"venue 1",
-    },
-    // {
-    //   id:2,
-    //   name:"venue 2",
-    // },
-    // {
-    //   id:3,
-    //   name:"venue 3",
-    // },
-    // {
-    //   id:4,
-    //   name:"venue 4",
-    // },
-    // {
-    //   id:5,
-    //   name:"venue 5",
-    // },
-    // {
-    //   id:6,
-    //   name:"venue 6",
-    // },
-    // {
-    //   id:7,
-    //   name:"venue 7",
-    // },
-    // {
-    //   id:8,
-    //   name:"venue 8",
-    // },
-    // {
-    //   id:9,
-    //   name:"venue 9",
-    // },
-    // {
-    //   id:10,
-    //   name:"venue 10",
-    // },
-  ]
-}
-
-let numberOfVenues = config.venues.length;
-let numberOfColumns = numberOfDays * numberOfVenues;
+let data = {events: null};
+let config = {venues: null};
+let numberOfVenues = null;
+let numberOfColumns = null;
+// global variables ends
 
 window.onload= ()=>{
-  console.log('loading')
+  console.log('loading frequently used DOM Data')
   originElement = document.getElementById("originPoint");
   dateElement = document.getElementById("dateScroll");
   scrollElement = document.getElementById("eventScroll");
   scrollElement.addEventListener('scroll', scrollListener);
   previousScroll.left = scrollElement.scrollLeft;
   previousScroll.top = scrollElement.scrollTop;
-  console.log(data);
-  initializeTimeArea();
-  initializeTimeSlots();
-  // initializeDateColumn();
-  dyanamicallyInitializeDateColumn();
-  for(let i = 0; i< data.events.length; i++){
-    createEventNode(data.events[i])
-  }
 }
 // target elements with the "draggable" class
 interact('.draggable')
@@ -197,6 +114,7 @@ interact('.draggable')
       event.target.setAttribute('unit-x', unitsX);
       event.target.setAttribute('unit-y', unitsY);
       event.target.childNodes[1].innerHTML = compileTimeText(unitsY, duration);
+      updateDatabaseCall(currentElement);
     }
     occupy(unitsX, unitsY, duration);
     currentElement = null;
@@ -258,6 +176,7 @@ interact('.draggable')
     } else {
       currentElement.setAttribute('duration', duration);
       event.target.childNodes[1].innerHTML = compileTimeText(unitsY, duration);
+      updateDatabaseCall(currentElement);
     }
     occupy(unitsX, unitsY, duration);
     currentElement = null;
@@ -389,12 +308,98 @@ window.onresize = function(event) {
 
 document.addEventListener('keypress', (event) => {
   if(event.code == 'Digit0'){
-    createEventNode(data.events[0]);
+    createEvent(data.events[0])
   }
   if(event.code == 'Digit9'){
     removeEvent(document.getElementById('1'));
   }
+  if(event.code == 'Digit8'){
+    let events = [
+      {
+        id:1,
+        title:"event 1",
+        start:1519653600,// 26 9am
+        duration:3600,
+      },
+      {
+        id:2,
+        title:"event 2", 
+        start:1519729200,// 27 6am
+        duration:5400,
+      },
+      {
+        id:3,
+        title:"event 3",
+        start:1519567200,// 25 9am
+        duration:3600,
+      },
+      {
+        id:4,
+        title:"event 4 with a super long name abcdabcdabcdabcd",
+        start:1519736400,// 27 7am
+        duration:3600,
+      },
+      {
+        id:5,
+        title:"event 5",
+        start:1519880700,// 1 0:05am
+        duration:600,
+      }
+    ];
+
+    let venues = [
+      {
+        id:1,
+        name:"venue 1",
+      },
+      // {
+      //   id:2,
+      //   name:"venue 2",
+      // },
+      // {
+      //   id:3,
+      //   name:"venue 3",
+      // },
+      // {
+      //   id:4,
+      //   name:"venue 4",
+      // },
+      // {
+      //   id:5,
+      //   name:"venue 5",
+      // },
+      // {
+      //   id:6,
+      //   name:"venue 6",
+      // },
+      // {
+      //   id:7,
+      //   name:"venue 7",
+      // },
+      // {
+      //   id:8,
+      //   name:"venue 8",
+      // },
+      // {
+      //   id:9,
+      //   name:"venue 9",
+      // },
+      // {
+      //   id:10,
+      //   name:"venue 10",
+      // },
+    ];
+
+    initializeCalendar(60, 7, '2018-02-25', events, venues);
+  }
+  if(event.code == 'Digit7'){
+    clearCalendar();
+  }
 });
+
+window.addEventListener('customEventUpdate', (event) =>{
+  console.log(event.detail);
+})
 
 function indexOfVenue(id){
   return 0;
@@ -402,7 +407,7 @@ function indexOfVenue(id){
 function createEventNode(event){
   if(lastDay.getTime() <= event.start*1000 || firstDay.getTime() > event.start * 1000){
     console.log('not in this week', lastDay.getTime(), event.start*1000, firstDay.getTime());
-    return;
+    return false;
   }
   let newEvent = document.createElement('div');
   newEvent.classList.add('draggable');
@@ -414,7 +419,7 @@ function createEventNode(event){
   let coordinates = timeToCoordinates(new Date(event.start*1000));
   if(isOccupied(coordinates.unitsX, coordinates.unitsY, event.duration / 60 / unitInterval)){
     alert('target time period is checked');
-    return;
+    return false;
   }
 
   let timeSpan = document.createElement('span');
@@ -474,15 +479,21 @@ function compileTimeText(unitsY, duration){
 function muniteToAMPMClock(minutes){
   let hour = Math.floor(minutes / 60);
   let minute = ('0' + (minutes % 60)).slice(-2);
-  return hour > 12 ? `${hour - 12}:${minute}PM` : hour == 12 ? `${hour}:${minute}PM`:`${hour}:${minute}AM`;
+  return hour > 12 ? hour == 24 ? `0:${minute}AM` :`${hour - 12}:${minute}PM` : hour == 12 ? `${hour}:${minute}PM`:`${hour}:${minute}AM`;
 }
 
+/**
+ * @desc requires unitInterval and numberOfColumn
+ */
 function initializeTimeSlots(){
   for(let i = 0; i < numberOfColumns; i++){
     timeSlots.push(Array(24*60/unitInterval).fill(0));
   }
 }
 
+/**
+ * @desc requires fisrtDay, originElement, numberOfDays, numberOfVenues
+ */
 function dyanamicallyInitializeDateColumn(){
   let time = new Date(firstDay);
   let columnContainer = document.getElementById('columnContainer');
@@ -493,6 +504,7 @@ function dyanamicallyInitializeDateColumn(){
     for(let j = 0; j < numberOfVenues; j++){
       let column = document.createElement('div');
       column.classList.add('dateColumn');
+      column.classList.add('columnFilling');
       columnContainer.insertBefore(column, scrollSpacer);
       let date = document.createElement('span');
       let day = document.createElement('span');
@@ -510,10 +522,20 @@ function dyanamicallyInitializeDateColumn(){
       if(i != 0 || j !=0){
         let eventColumn = document.createElement('div');
         eventColumn.classList.add('timeColumn');
+        eventColumn.classList.add('columnFilling');
         eventArea.appendChild(eventColumn);
       }
     }
     time.setDate(time.getDate() + 1);
+  }
+}
+
+function clearDateColumn(){
+  let targets = document.getElementsByClassName('columnFilling');
+  console.log('targets',targets);
+  let length = targets.length;
+  for(let i =0; i< length; i++){
+    targets[0].parentNode.removeChild(targets[0]);
   }
 }
 
@@ -551,7 +573,9 @@ function vacate(unitsX, unitsY, duration){
     }
   }
 }
-
+/**
+ * @desc requires unitsInterval.
+ */
 function initializeTimeArea(){
   let gridContainer = document.getElementById('gridContainer');
   let timeContainer = document.getElementById('timeContainer');
@@ -571,7 +595,95 @@ function initializeTimeArea(){
   }
 }
 
-
-function updateDatabase(){
-  console.log('update database');
+function initializeEvents(){
+  for(let i = 0; i< data.events.length; i++){
+    createEventNode(data.events[i])
+  }
 }
+
+function clearChildNodes(element){
+  // while(element.firstElementChild){
+  //   element.removeChild(element.firstElementChild);
+  // }
+  while(element.firstChild){
+    element.removeChild(element.firstChild);
+  }
+}
+function clearTimeArea(){
+  let gridContainer = document.getElementById('gridContainer');
+  let timeContainer = document.getElementById('timeContainer');
+  clearChildNodes(gridContainer);
+  clearChildNodes(timeContainer);
+}
+
+function clearEvents(){
+  clearChildNodes(originElement);
+}
+
+function initializeCalendar(interval, days, initDay, events, venues){
+  console.log("Initializing grid and events")
+  initializeGlobalVariables(interval, days, initDay, events, venues);
+  initializeTimeArea();
+  initializeTimeSlots();
+  dyanamicallyInitializeDateColumn();
+  initializeEvents();
+}
+
+function initializeGlobalVariables(interval, days, initDay, events, venues){
+  unitInterval = interval;
+  numberOfDays = days;
+  firstDay = new Date(initDay);
+  firstDay.setMinutes(firstDay.getMinutes() + firstDay.getTimezoneOffset());
+  lastDay = new Date(firstDay);
+  lastDay.setDate(firstDay.getDate() + numberOfDays);
+
+  data.events = events;
+
+  config.venues = venues;
+
+  numberOfVenues = config.venues.length;
+  numberOfColumns = numberOfDays * numberOfVenues;
+}
+
+function clearCalendar(){
+  console.log("clearing grid and events");
+  timeSlots = [];
+  clearTimeArea();
+  clearEvents();
+  clearDateColumn();
+}
+
+function dispatchCustomEvent(payload){
+  let event = new CustomEvent("customEventUpdate", {detail: payload});
+  window.dispatchEvent(event);
+}
+
+function updateDatabaseCall(element, creation = false){
+  console.log(element);
+  let unitsX = element.getAttribute('unit-x');
+  let unitsY = element.getAttribute('unit-y');
+  let duration = element.getAttribute('duration');
+  let eventID = element.getAttribute("id");
+  let title = element.firstChild.innerHTML;
+  let start = new Date(firstDay);
+  let venueID = unitsX % numberOfVenues;
+  start.setDate(start.getDate() + Math.floor(unitsX / numberOfVenues));
+  start.setMinutes(start.getMinutes() + unitsY * unitInterval);
+  dispatchCustomEvent({start, duration, venueID, eventID, title, creation});
+}
+
+function createDatabaseCall(){
+
+}
+
+function createEvent(event){
+  let result = createEventNode(event);
+  if(result){
+    updateDatabaseCall(result, true);
+  }
+}
+// export {
+//   initializeCalendar,
+//   clearCalendar,
+//   createEvent
+// };
