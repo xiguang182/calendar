@@ -34,4 +34,6 @@ duration:"3600",
 eventID:"3",  
 start:Mon Feb 26 2018 00:00:00 GMT-0500 (Eastern Standard Time) {},  
 title:"event 3",  
-venueID:0}  
+venueID:0}  
+# update 2018/03/15  
+Create initialization function to build the base element. Therefore, the lines of html will be further reduced. Making it easier to integrate with other frameworkds.  
