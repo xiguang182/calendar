@@ -1,4 +1,5 @@
 'use strict';
+// import interact from 'interactjs';
 /**
  * week dictionary
  */
@@ -39,6 +40,7 @@ let numberOfColumns = null;
 // global variables ends
 
 window.onload= ()=>{
+  initializeCalendarBase();
   console.log('loading frequently used DOM Data')
   originElement = document.getElementById("originPoint");
   dateElement = document.getElementById("dateScroll");
@@ -305,98 +307,6 @@ window.onresize = function(event) {
   // console.log(events);
 };
 
-
-document.addEventListener('keypress', (event) => {
-  if(event.code == 'Digit0'){
-    createEvent(data.events[0])
-  }
-  if(event.code == 'Digit9'){
-    removeEvent(document.getElementById('1'));
-  }
-  if(event.code == 'Digit8'){
-    let events = [
-      {
-        id:1,
-        title:"event 1",
-        start:1519653600,// 26 9am
-        duration:3600,
-      },
-      {
-        id:2,
-        title:"event 2", 
-        start:1519729200,// 27 6am
-        duration:5400,
-      },
-      {
-        id:3,
-        title:"event 3",
-        start:1519567200,// 25 9am
-        duration:3600,
-      },
-      {
-        id:4,
-        title:"event 4 with a super long name abcdabcdabcdabcd",
-        start:1519736400,// 27 7am
-        duration:3600,
-      },
-      {
-        id:5,
-        title:"event 5",
-        start:1519880700,// 1 0:05am
-        duration:600,
-      }
-    ];
-
-    let venues = [
-      {
-        id:1,
-        name:"venue 1",
-      },
-      // {
-      //   id:2,
-      //   name:"venue 2",
-      // },
-      // {
-      //   id:3,
-      //   name:"venue 3",
-      // },
-      // {
-      //   id:4,
-      //   name:"venue 4",
-      // },
-      // {
-      //   id:5,
-      //   name:"venue 5",
-      // },
-      // {
-      //   id:6,
-      //   name:"venue 6",
-      // },
-      // {
-      //   id:7,
-      //   name:"venue 7",
-      // },
-      // {
-      //   id:8,
-      //   name:"venue 8",
-      // },
-      // {
-      //   id:9,
-      //   name:"venue 9",
-      // },
-      // {
-      //   id:10,
-      //   name:"venue 10",
-      // },
-    ];
-
-    initializeCalendar(60, 7, '2018-02-25', events, venues);
-  }
-  if(event.code == 'Digit7'){
-    clearCalendar();
-  }
-});
-
 window.addEventListener('customEventUpdate', (event) =>{
   console.log(event.detail);
 })
@@ -573,6 +483,62 @@ function vacate(unitsX, unitsY, duration){
     }
   }
 }
+
+function initializeCalendarBase(){
+  let baseElement = document.getElementById('calendarBase');
+  baseElement.classList.add('grid');
+  let dateScroll = document.createElement('div');
+  dateScroll.classList.add('date');
+  dateScroll.setAttribute('id', 'dateScroll');
+  baseElement.appendChild(dateScroll);
+  let timeBase = document.createElement('div');
+  timeBase.classList.add('time', 'flexed');
+  baseElement.appendChild(timeBase);
+  
+  let dateHeader = document.createElement('div');
+  dateHeader.classList.add('dateHeader');
+  dateScroll.appendChild(dateHeader);
+  let daysFrame = document.createElement('div');
+  daysFrame.classList.add('daysFrame');
+  dateScroll.appendChild(daysFrame);
+
+  let days = document.createElement('div');
+  days.classList.add('days');
+  days.setAttribute('id', 'columnContainer');
+  daysFrame.appendChild(days);
+
+  let scrollSpacer = document.createElement('div');
+  scrollSpacer.classList.add('scrollSpace');
+  scrollSpacer.setAttribute('id', 'scrollSpacer');
+  days.appendChild(scrollSpacer);
+
+
+  let eventScroll = document.createElement('div');
+  eventScroll.classList.add('timeScroll');
+  eventScroll.setAttribute('id', 'eventScroll');
+  timeBase.appendChild(eventScroll);
+
+  let timeColumn = document.createElement('div');
+  timeColumn.classList.add('timeHeaderCol');
+  timeColumn.setAttribute('id', 'timeColumn');
+  eventScroll.appendChild(timeColumn);
+  let eventArea = document.createElement('div');
+  eventArea.classList.add('eventArea', 'flexed');
+  eventScroll.appendChild(eventArea);
+  
+  let timeContainer = document.createElement('div');
+  timeContainer.classList.add('timeHeader');
+  timeContainer.setAttribute('id', 'timeContainer');
+  timeColumn.appendChild(timeContainer);
+
+  let gridContainer = document.createElement('div');
+  gridContainer.setAttribute('id', 'gridContainer');
+  eventArea.appendChild(gridContainer);
+  let originPoint = document.createElement('div');
+  originPoint.classList.add('timeColumn');
+  originPoint.setAttribute('id', 'originPoint');
+  eventArea.appendChild(originPoint);
+}
 /**
  * @desc requires unitsInterval.
  */
@@ -672,10 +638,6 @@ function updateDatabaseCall(element, creation = false){
   dispatchCustomEvent({start, duration, venueID, eventID, title, creation});
 }
 
-function createDatabaseCall(){
-
-}
-
 function createEvent(event){
   let result = createEventNode(event);
   if(result){
@@ -687,3 +649,94 @@ function createEvent(event){
 //   clearCalendar,
 //   createEvent
 // };
+
+document.addEventListener('keypress', (event) => {
+  if(event.code == 'Digit0'){
+    createEvent(data.events[0])
+  }
+  if(event.code == 'Digit9'){
+    removeEvent(document.getElementById('1'));
+  }
+  if(event.code == 'Digit8'){
+    let events = [
+      {
+        id:1,
+        title:"event 1",
+        start:1519653600,// 26 9am
+        duration:3600,
+      },
+      {
+        id:2,
+        title:"event 2", 
+        start:1519729200,// 27 6am
+        duration:5400,
+      },
+      {
+        id:3,
+        title:"event 3",
+        start:1519567200,// 25 9am
+        duration:3600,
+      },
+      {
+        id:4,
+        title:"event 4 with a super long name abcdabcdabcdabcd",
+        start:1519736400,// 27 7am
+        duration:3600,
+      },
+      {
+        id:5,
+        title:"event 5",
+        start:1519880700,// 1 0:05am
+        duration:600,
+      }
+    ];
+
+    let venues = [
+      {
+        id:1,
+        name:"venue 1",
+      },
+      // {
+      //   id:2,
+      //   name:"venue 2",
+      // },
+      // {
+      //   id:3,
+      //   name:"venue 3",
+      // },
+      // {
+      //   id:4,
+      //   name:"venue 4",
+      // },
+      // {
+      //   id:5,
+      //   name:"venue 5",
+      // },
+      // {
+      //   id:6,
+      //   name:"venue 6",
+      // },
+      // {
+      //   id:7,
+      //   name:"venue 7",
+      // },
+      // {
+      //   id:8,
+      //   name:"venue 8",
+      // },
+      // {
+      //   id:9,
+      //   name:"venue 9",
+      // },
+      // {
+      //   id:10,
+      //   name:"venue 10",
+      // },
+    ];
+
+    initializeCalendar(60, 7, '2018-02-25', events, venues);
+  }
+  if(event.code == 'Digit7'){
+    clearCalendar();
+  }
+});
