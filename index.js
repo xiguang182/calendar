@@ -181,6 +181,9 @@ interact('.draggable')
   }
 }).on('resizemove', function (event) {
   event.target.style.height = event.rect.height + 'px';
+}).on('tap', function (event) {
+  dispatchInfoEvent(retriveInfo(event.currentTarget));
+  event.preventDefault();
 });
 
 
@@ -307,12 +310,22 @@ window.addEventListener('customEventUpdate', (event) =>{
   console.log(event.detail);
 })
 
-function indexOfVenue(id){
-  return 0;
+function indexOfVenue(venueID){
+  return config.venues.findIndex(venue =>{
+    return venue.id == venueID;
+  })
 }
 function createEventNode(event){
   if(lastDay.getTime() <= event.start*1000 || firstDay.getTime() > event.start * 1000){
-    console.log('not in this week', lastDay.getTime(), event.start*1000, firstDay.getTime());
+    // console.log('not in this week', lastDay.getTime(), event.start*1000, firstDay.getTime());
+    return false;
+  }
+  let endTime = new Date(event.start*1000);
+  let startingDay = endTime.getDate();
+  endTime.setSeconds(endTime.getSeconds() + event.duration + 1);
+  let endingDay = endTime.getDate();
+  if(startingDay != endingDay){
+    console.log('overnight event is not supported',startingDay,endingDay);
     return false;
   }
   let newEvent = document.createElement('div');
@@ -322,7 +335,7 @@ function createEventNode(event){
   team.innerHTML = event.title;
   team.classList.add('eventText');
   newEvent.appendChild(team);
-  let coordinates = timeToCoordinates(new Date(event.start*1000));
+  let coordinates = timeToCoordinates(new Date(event.start*1000), event.venueID);
   if(isOccupied(coordinates.unitsX, coordinates.unitsY, event.duration / 60 / unitInterval)){
     console.log('target time period is checked');
     return false;
@@ -338,6 +351,7 @@ function createEventNode(event){
   if(height < 1){
     height = 1;
   }
+
   let position = originElement.getBoundingClientRect();
   // translate the element
   let x = coordinates.unitsX * position.width;
@@ -360,18 +374,22 @@ function createEventNode(event){
   occupy(coordinates.unitsX, coordinates.unitsY, event.duration);
   return newEvent;
 }
-
+/**
+ * 
+ * @param {*} event target element node
+ */
 function removeEvent(event){
   let unitsX = event.getAttribute('unit-x');
   let unitsY = event.getAttribute('unit-y');
   let duration = event.getAttribute('duration');
   vacate(unitsX, unitsY, duration);
-  originElement.removeChild(event);
+  return originElement.removeChild(event);
 }
 
-function timeToCoordinates(time){
+function timeToCoordinates(time, venueID){
   let difference = time.getTime() - firstDay.getTime();
-  let unitsX = Math.floor(difference / (1000*3600*24)) * numberOfVenues + indexOfVenue(0);
+  console.log(venueID, indexOfVenue(venueID))
+  let unitsX = Math.floor(difference / (1000*3600*24)) * numberOfVenues + indexOfVenue(venueID);
   let unitsY = Math.floor((difference % (1000*3600*24)) / (1000 * 60 * unitInterval));
   return {unitsX, unitsY}
 } 
@@ -406,7 +424,7 @@ function dyanamicallyInitializeDateColumn(){
   let columnContainer = document.getElementById('columnContainer');
   let scrollSpacer = document.getElementById('scrollSpacer');
   let eventArea = originElement.parentNode;
-  console.log('fired',numberOfDays,numberOfVenues);
+  // console.log('fired',numberOfDays,numberOfVenues);
   for(let i = 0; i < numberOfDays; i++){
     for(let j = 0; j < numberOfVenues; j++){
       let column = document.createElement('div');
@@ -439,7 +457,7 @@ function dyanamicallyInitializeDateColumn(){
 
 function clearDateColumn(){
   let targets = document.getElementsByClassName('columnFilling');
-  console.log('targets',targets);
+  // console.log('targets',targets);
   let length = targets.length;
   for(let i =0; i< length; i++){
     targets[0].parentNode.removeChild(targets[0]);
@@ -449,10 +467,10 @@ function clearDateColumn(){
 
 
 function isOccupied(unitsX, unitsY, units){
-  console.log(unitsX, unitsY, units)
+  // console.log(unitsX, unitsY, units)
   for(let i = unitsY; i < +unitsY + units; i++){
     if(i < timeSlots[unitsX].length){
-      console.log(timeSlots[unitsX][i])
+      // console.log(timeSlots[unitsX][i])
       if(timeSlots[unitsX][i] == 1){
         return true;
       }
@@ -616,13 +634,23 @@ function clearCalendar(){
   clearDateColumn();
 }
 
-function dispatchCustomEvent(payload){
+function dispatchInfoEvent(payload){
+  let event = new CustomEvent("customEventInfo", {detail: payload});
+  window.dispatchEvent(event);
+}
+
+function dispatchUpdateEvent(payload){
   let event = new CustomEvent("customEventUpdate", {detail: payload});
   window.dispatchEvent(event);
 }
 
 function updateDatabaseCall(element, creation = false){
-  console.log(element);
+  let payload = retriveInfo(element);
+  payload.creation = creation;
+  dispatchUpdateEvent(payload);
+}
+
+function retriveInfo(element){
   let unitsX = element.getAttribute('unit-x');
   let unitsY = element.getAttribute('unit-y');
   let duration = element.getAttribute('duration');
@@ -630,11 +658,14 @@ function updateDatabaseCall(element, creation = false){
   eventID = +eventID.slice(6);
   let title = element.firstChild.innerHTML;
   let start = new Date(firstDay);
-  let venueID = unitsX % numberOfVenues;
+  let venueIndex = unitsX % numberOfVenues;
+  let venueID = config.venues[venueIndex].id;
   start.setDate(start.getDate() + Math.floor(unitsX / numberOfVenues));
   start.setMinutes(start.getMinutes() + unitsY * unitInterval);
-  dispatchCustomEvent({start, duration, venueID, eventID, title, creation});
+  return {start, duration, venueID, eventID, title};
 }
+
+
 
 function createEvent(event){
   let result = createEventNode(event);
@@ -659,6 +690,31 @@ function updateEventID(oldID, newID){
   targetElement.setAttribute('id','event-'+newID);
 }
 
+function updateEventNode(event){
+  let eventID = 'event-'+ event.id;
+  let targetNode = document.getElementById(eventID);
+  removeEvent(targetNode);
+
+  let result = createEvent(event)
+  if(!result){
+    recoverEventNode(targetNode);
+    return false;
+  }
+  return true;
+}
+
+function recoverEventNode(removedEvent){
+  console.log('rolling back')
+  if(removedEvent==null){
+    return false;
+  }
+  let unitsX = removedEvent.getAttribute('unit-x');
+  let unitsY = removedEvent.getAttribute('unit-y');
+  let duration = removedEvent.getAttribute('duration');
+  occupy(unitsX, unitsY, duration);
+  originElement.appendChild(removedEvent);
+}
+
 function buildCalendar(){
   initializeCalendarBase();
   console.log('loading frequently used DOM Data')
@@ -678,14 +734,23 @@ function buildCalendar(){
 //   createEvent,
 //   deleteEvent,
 //   updateEventID,
+//   updateEventNode,
 // };
 
+
+// local test data
 document.addEventListener('keypress', (event) => {
   if(event.code == 'Digit0'){
-    createEvent(data.events[0])
+    updateEventNode({
+      id:1,
+      title:"event 1",
+      start:1519653600,// 26 9am
+      duration:360000,
+      venueID:11,
+    },)
   }
   if(event.code == 'Digit9'){
-    removeEvent(document.getElementById('1'));
+    recoverEventNode(removeEvent(document.getElementById('event-1')));
   }
   if(event.code == 'Digit8'){
     let events = [
@@ -694,42 +759,47 @@ document.addEventListener('keypress', (event) => {
         title:"event 1",
         start:1519653600,// 26 9am
         duration:3600,
+        venueID:11,
       },
       {
         id:2,
         title:"event 2", 
         start:1519729200,// 27 6am
         duration:5400,
+        venueID:11,
       },
       {
         id:3,
         title:"event 3",
         start:1519567200,// 25 9am
         duration:3600,
+        venueID:22,
       },
       {
         id:4,
         title:"event 4 with a super long name abcdabcdabcdabcd",
         start:1519736400,// 27 7am
         duration:3600,
+        venueID:11,
       },
       {
         id:5,
         title:"event 5",
         start:1519880700,// 1 0:05am
-        duration:600,
+        duration:360000,
+        venueID:11,
       }
     ];
 
     let venues = [
       {
-        id:1,
+        id:11,
         name:"venue 1",
       },
-      // {
-      //   id:2,
-      //   name:"venue 2",
-      // },
+      {
+        id:22,
+        name:"venue 2",
+      },
       // {
       //   id:3,
       //   name:"venue 3",
