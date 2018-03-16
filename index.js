@@ -1,4 +1,5 @@
 'use strict';
+// commented server side syntax
 // import interact from 'interactjs';
 /**
  * week dictionary
@@ -20,6 +21,7 @@ let originElement = null;
 let scrollElement = null;
 let dateElement = null;
 let currentElement = null;
+// scroll synchronizer
 let previousScroll = {
   left: null,
   top: null
@@ -39,15 +41,9 @@ let numberOfVenues = null;
 let numberOfColumns = null;
 // global variables ends
 
+// call exported buildCalendar and comment this part if mount timing need to be altered.
 window.onload= ()=>{
-  initializeCalendarBase();
-  console.log('loading frequently used DOM Data')
-  originElement = document.getElementById("originPoint");
-  dateElement = document.getElementById("dateScroll");
-  scrollElement = document.getElementById("eventScroll");
-  scrollElement.addEventListener('scroll', scrollListener);
-  previousScroll.left = scrollElement.scrollLeft;
-  previousScroll.top = scrollElement.scrollTop;
+  buildCalendar();
 }
 // target elements with the "draggable" class
 interact('.draggable')
@@ -328,7 +324,7 @@ function createEventNode(event){
   newEvent.appendChild(team);
   let coordinates = timeToCoordinates(new Date(event.start*1000));
   if(isOccupied(coordinates.unitsX, coordinates.unitsY, event.duration / 60 / unitInterval)){
-    alert('target time period is checked');
+    console.log('target time period is checked');
     return false;
   }
 
@@ -352,11 +348,12 @@ function createEventNode(event){
     'translate(' + x + 'px, ' + y + 'px)';
 
   // update the posiion attributes
+  let eventID = 'event-' + event.id;
   newEvent.setAttribute('data-x', x);
   newEvent.setAttribute('data-y', y);
   
   newEvent.setAttribute('duration', event.duration);
-  newEvent.setAttribute('id', event.id);
+  newEvent.setAttribute('id', eventID);
   newEvent.setAttribute('unit-x', coordinates.unitsX);
   newEvent.setAttribute('unit-y', coordinates.unitsY);
   originElement.appendChild(newEvent);
@@ -630,6 +627,7 @@ function updateDatabaseCall(element, creation = false){
   let unitsY = element.getAttribute('unit-y');
   let duration = element.getAttribute('duration');
   let eventID = element.getAttribute("id");
+  eventID = +eventID.slice(6);
   let title = element.firstChild.innerHTML;
   let start = new Date(firstDay);
   let venueID = unitsX % numberOfVenues;
@@ -642,12 +640,44 @@ function createEvent(event){
   let result = createEventNode(event);
   if(result){
     updateDatabaseCall(result, true);
+    return true;
+  } else {
+    return false;
   }
 }
+
+
+function deleteEvent(id){
+  let eventID = 'event' + id;
+  let event = document.getElementById(eventID);
+  removeEvent(event);
+}
+
+function updateEventID(oldID, newID){
+  let previousID = 'event-' + oldID;
+  let targetElement = document.getElementById(previousID);
+  targetElement.setAttribute('id','event-'+newID);
+}
+
+function buildCalendar(){
+  initializeCalendarBase();
+  console.log('loading frequently used DOM Data')
+  originElement = document.getElementById("originPoint");
+  dateElement = document.getElementById("dateScroll");
+  scrollElement = document.getElementById("eventScroll");
+  scrollElement.addEventListener('scroll', scrollListener);
+  previousScroll.left = scrollElement.scrollLeft;
+  previousScroll.top = scrollElement.scrollTop;
+}
+
+// commented since it's server side syntax
 // export {
+//   buildCalendar,
 //   initializeCalendar,
 //   clearCalendar,
-//   createEvent
+//   createEvent,
+//   deleteEvent,
+//   updateEventID,
 // };
 
 document.addEventListener('keypress', (event) => {
