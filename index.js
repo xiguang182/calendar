@@ -39,6 +39,7 @@ let data = {events: null};
 let config = {venues: null};
 let numberOfVenues = null;
 let numberOfColumns = null;
+const megaData = {};
 // global variables ends
 
 // call exported buildCalendar and comment this part if mount timing need to be altered.
@@ -140,8 +141,8 @@ interact('.draggable')
         if(currentElement != null){
           let unitsX = currentElement.getAttribute('unit-x');
           let unitsY = currentElement.getAttribute('unit-y');
-          console.log(unitsX, unitsY, units)
-          console.log(timeSlots)
+          // console.log(unitsX, unitsY, units)
+          // console.log(timeSlots)
           if(isOccupied(unitsX, unitsY, units)){
             //snap back
             let duration = currentElement.getAttribute('duration');
@@ -306,9 +307,9 @@ window.onresize = function(event) {
   // console.log(events);
 };
 
-window.addEventListener('customEventUpdate', (event) =>{
-  console.log(event.detail);
-})
+// window.addEventListener('customEventUpdate', (event) =>{
+//   console.log(event.detail);
+// })
 
 function indexOfVenue(venueID){
   return config.venues.findIndex(venue =>{
@@ -371,6 +372,7 @@ function createEventNode(event){
   newEvent.setAttribute('unit-x', coordinates.unitsX);
   newEvent.setAttribute('unit-y', coordinates.unitsY);
   originElement.appendChild(newEvent);
+  megaData[eventID] = event.megaData;
   occupy(coordinates.unitsX, coordinates.unitsY, event.duration);
   return newEvent;
 }
@@ -388,7 +390,7 @@ function removeEvent(event){
 
 function timeToCoordinates(time, venueID){
   let difference = time.getTime() - firstDay.getTime();
-  console.log(venueID, indexOfVenue(venueID))
+  // console.log(venueID, indexOfVenue(venueID))
   let unitsX = Math.floor(difference / (1000*3600*24)) * numberOfVenues + indexOfVenue(venueID);
   let unitsY = Math.floor((difference % (1000*3600*24)) / (1000 * 60 * unitInterval));
   return {unitsX, unitsY}
@@ -655,6 +657,7 @@ function retriveInfo(element){
   let unitsY = element.getAttribute('unit-y');
   let duration = element.getAttribute('duration');
   let eventID = element.getAttribute("id");
+  let extraData = megaData[eventID];
   eventID = +eventID.slice(6);
   let title = element.firstChild.innerHTML;
   let start = new Date(firstDay);
@@ -662,7 +665,7 @@ function retriveInfo(element){
   let venueID = config.venues[venueIndex].id;
   start.setDate(start.getDate() + Math.floor(unitsX / numberOfVenues));
   start.setMinutes(start.getMinutes() + unitsY * unitInterval);
-  return {start, duration, venueID, eventID, title};
+  return {start, duration, venueID, eventID, title, megaData:extraData};
 }
 
 
@@ -695,11 +698,12 @@ function updateEventNode(event){
   let targetNode = document.getElementById(eventID);
   removeEvent(targetNode);
 
-  let result = createEvent(event)
+  let result = createEventNode(event)
   if(!result){
     recoverEventNode(targetNode);
     return false;
   }
+  megaData[eventID] = event.megaData;
   return true;
 }
 
@@ -745,8 +749,11 @@ document.addEventListener('keypress', (event) => {
       id:1,
       title:"event 1",
       start:1519653600,// 26 9am
-      duration:360000,
+      duration:36000,
       venueID:11,
+      megaData:{
+        note:'new megaData',
+      },
     },)
   }
   if(event.code == 'Digit9'){
@@ -760,6 +767,9 @@ document.addEventListener('keypress', (event) => {
         start:1519653600,// 26 9am
         duration:3600,
         venueID:11,
+        megaData:{
+          note:'asdfjaskf',
+        },
       },
       {
         id:2,
@@ -767,6 +777,9 @@ document.addEventListener('keypress', (event) => {
         start:1519729200,// 27 6am
         duration:5400,
         venueID:11,
+        megaData:{
+          note:'asdfjaskf',
+        },
       },
       {
         id:3,
@@ -774,6 +787,9 @@ document.addEventListener('keypress', (event) => {
         start:1519567200,// 25 9am
         duration:3600,
         venueID:22,
+        megaData:{
+          note:'asdfjaskf',
+        },
       },
       {
         id:4,
@@ -781,6 +797,9 @@ document.addEventListener('keypress', (event) => {
         start:1519736400,// 27 7am
         duration:3600,
         venueID:11,
+        megaData:{
+          note:'asdfjaskf',
+        },
       },
       {
         id:5,
@@ -788,6 +807,9 @@ document.addEventListener('keypress', (event) => {
         start:1519880700,// 1 0:05am
         duration:360000,
         venueID:11,
+        megaData:{
+          note:'asdfjaskf',
+        },
       }
     ];
 
