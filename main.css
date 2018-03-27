@@ -3,7 +3,7 @@
   height: 47px;
   background-color: aqua;
   position: absolute;
-  z-index: 9999;
+  z-index: 99;
   overflow: hidden;
 }
 
@@ -286,4 +286,19 @@ span {
   -webkit-flex: 1 1 auto;
   flex: 1 1 auto;
   min-width: 100px;
+}
+
+.reservedArea {
+  width: 100%;
+  border-top: #e0e0e0 1px solid;
+  display: flex;
+  /* overflow: scroll; */
+  flex: 0 0 100px;
+}
+
+.reservedEvent {
+  border: 1px solid #000;
+  z-index: 100;
+  flex: 0 0 100px;
+  overflow: hidden;
 }

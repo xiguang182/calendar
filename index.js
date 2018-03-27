@@ -18,6 +18,7 @@ const weekdays = [
  * frequently used DOM data
  */
 let originElement = null;
+let reservedElement = null;
 let scrollElement = null;
 let dateElement = null;
 let currentElement = null;
@@ -40,6 +41,7 @@ let config = {venues: null};
 let numberOfVenues = null;
 let numberOfColumns = null;
 const megaData = {};
+let reservedEvents =  {}
 // global variables ends
 
 // call exported buildCalendar and comment this part if mount timing need to be altered.
@@ -476,6 +478,8 @@ function isOccupied(unitsX, unitsY, units){
       if(timeSlots[unitsX][i] == 1){
         return true;
       }
+    } else {
+      return 0;
     }
   }
   return false;
@@ -511,6 +515,35 @@ function initializeCalendarBase(){
   let timeBase = document.createElement('div');
   timeBase.classList.add('time', 'flexed');
   baseElement.appendChild(timeBase);
+
+  // reserved area
+  let reservedArea = document.createElement('div');
+  reservedArea.innerText = 'Reserved Area';
+  reservedArea.classList.add('reservedArea');
+  reservedElement = reservedArea;
+  baseElement.appendChild(reservedArea);
+
+  // reserved event
+  for(let i = 0; i < 10; i++){
+    let reservedEvent = document.createElement('div');
+    reservedEvent.classList.add('reservedEvent');
+    reservedEvent.innerText = `Resereved Event ${i}`;
+    reservedEvent.setAttribute('duration', '7200');
+    let eventID = i+100;
+    reservedEvent.setAttribute('eventID', eventID);
+    
+    reservedEvents[eventID] = {
+      id: eventID,
+      title:'reserved event' + eventID,
+      duration:7200,
+      megaData:{
+        note:'asdfjaskf',
+      },
+    }
+    reservedArea.appendChild(reservedEvent);
+  }
+
+
   
   let dateHeader = document.createElement('div');
   dateHeader.classList.add('dateHeader');
@@ -649,6 +682,7 @@ function dispatchUpdateEvent(payload){
 function updateDatabaseCall(element, creation = false){
   let payload = retriveInfo(element);
   payload.creation = creation;
+  // console.log(payload);
   dispatchUpdateEvent(payload);
 }
 
@@ -730,7 +764,7 @@ function buildCalendar(){
   previousScroll.top = scrollElement.scrollTop;
 }
 
-// commented since it's server side syntax
+// commented since it's server side module syntax
 // export {
 //   buildCalendar,
 //   initializeCalendar,
@@ -861,4 +895,124 @@ document.addEventListener('keypress', (event) => {
   if(event.code == 'Digit7'){
     clearCalendar();
   }
+  if(event.code == 'Digit6'){
+    createReserveNode(testReserveEvent);
+  }
+  if(event.code == 'Digit5'){
+    activeToReserved(3);
+  }
 });
+
+
+// reserved event
+// target elements with the "draggable" class
+interact('.reservedEvent')
+.draggable({
+  snap: {
+    targets: [
+      function(x, y){
+        console.log(x,y);
+        let position = originElement.getBoundingClientRect();
+        let reservedPostion = reservedElement.getBoundingClientRect();
+        
+        if(y >= position.y && y <= reservedPostion.y){
+          let unitsX = Math.round((x - position.left)/ position.width);
+          if(unitsX < 0){
+            unitsX = 0;
+          }
+          if(unitsX >= numberOfColumns){
+            unitsX = numberOfColumns - 1;
+          }
+          let snapX = position.left + unitsX * position.width;
+          let unitsY = Math.round((y - position.top)/ timeUnit);
+          let snapY = position.top + unitsY * timeUnit;
+          if(currentElement != null){
+            console.log(reservedElement.getBoundingClientRect());
+            let duration = currentElement.getAttribute('duration');
+            let eventID = currentElement.getAttribute('eventID');
+            let occupationCheck = isOccupied(unitsX, unitsY, duration / 60 / unitInterval);
+            // console.log(occupationCheck, occupationCheck == false, occupationCheck === 0)
+            if(occupationCheck || occupationCheck === 0){
+              // do nothing
+              // console.log('occupied');
+              
+            } else {
+              // record attributes to create
+              // console.log('fired');
+              reserveToActive(unitsX, unitsY, eventID);
+              
+            }
+          }
+        }
+        return {x: 0, y:0};
+      }
+    ],
+    range: Infinity,
+    endOnly: true, // soft snapping
+    relativePoints: [ { x: 0, y: 0 } ]
+  },
+  onstart: (event)=>{
+    currentElement = event.target;
+  },
+  // call this function on every dragmove event
+  onmove: dragMoveListener,
+  // call this function on every dragend event
+  onend: function (event) {
+    event.target.style.webkitTransform =
+    event.target.style.transform =
+      'translate(' + 0 + 'px, ' + 0 + 'px)';
+      event.target.removeAttribute('data-x');
+      event.target.removeAttribute('data-y');
+      currentElement = null;
+  }
+});
+
+function createEventObject(unitsX, unitsY, reservedEventID){
+  let start = new Date(firstDay);
+  let venueIndex = unitsX % numberOfVenues;
+  let venueID = config.venues[venueIndex].id;
+  start.setDate(start.getDate() + Math.floor(unitsX / numberOfVenues));
+  start.setMinutes(start.getMinutes() + unitsY * unitInterval);
+  reservedEvents[reservedEventID].venueID = venueID;
+  reservedEvents[reservedEventID].start = Math.floor(start.getTime()/1000);
+  return reservedEvents[reservedEventID];
+}
+
+function reserveToActive(unitsX, unitsY, eventID){
+  updateDatabaseCall(createEventNode(createEventObject(unitsX, unitsY, eventID)))
+  currentElement.parentNode.removeChild(currentElement);
+  delete reservedEvents[eventID];
+}
+
+function activeToReserved(id){
+  let target = document.getElementById('event-'+id);
+  let info = retriveInfo(target);
+  let event = {
+    id: info.eventID,
+    title: info.title, 
+    duration: info.duration, 
+    megaData: info.megaData,
+  };
+  console.log(info, event);
+  createReserveNode(event);
+  removeEvent(target);
+}
+const testReserveEvent = {
+  id: 111,
+  title:'test reserved event 101',
+  duration:7200,
+  megaData:{
+    note:'asdfjaskf',
+  },
+}
+
+function createReserveNode(event){
+  let reservedEvent = document.createElement('div');
+  reservedEvent.classList.add('reservedEvent');
+  reservedEvent.innerText = `Resereved Event ${event.title}`;
+  reservedEvent.setAttribute('duration', event);
+  reservedEvent.setAttribute('eventID', event.id);
+  
+  reservedEvents[event.id] = event;
+  reservedElement.appendChild(reservedEvent);
+}
