@@ -46,3 +46,7 @@ venueID:0}  
 * disable overnight event creation until the issue is solved  
 * apply index conversion for venues, so the actual venue id can be arbitrary.
 * code rearrangement for better reusability
+# update 2018/03/27
+### Add a reserved area to contain events without starting time.
+* reserved evetns can be drag into main area and drop there to create a regular event via reserveToActive()
+* regular event can be 'archived' to reserved area via activeToReserve()
