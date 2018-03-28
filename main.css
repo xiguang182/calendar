@@ -180,6 +180,8 @@ span {
   max-width: 80px;
 }
 
+
+
 .flexed {
   -webkit-box-flex: 1 1 60%;
   -webkit-flex: 1 1 60%;
@@ -292,8 +294,16 @@ span {
   width: 100%;
   border-top: #e0e0e0 1px solid;
   display: flex;
-  /* overflow: scroll; */
-  flex: 0 0 100px;
+  /* overflow-x: scroll; */
+  height: 80px;
+  flex-grow: 0;
+  flex-shrink: 0;
+  transition:  1s;
+  -webkit-transition:  1s;
+}
+
+.zeroHeight {
+  height: 0px !important;
 }
 
 .reservedEvent {
@@ -301,4 +311,16 @@ span {
   z-index: 100;
   flex: 0 0 100px;
   overflow: hidden;
+}
+
+.controlPenal {
+  -webkit-box-flex: 1 1 0;
+  -webkit-flex: 1 1 0;
+  flex: 1 1 0;
+}
+
+.flexParent { 
+  /* display: -webkit-flex; */
+  display: flex;
+  flex-direction: row;
 }

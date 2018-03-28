@@ -31,6 +31,8 @@ let previousScroll = {
  * other global variables
  */
 const timeUnit = 48; //pixels same as in style sheet
+const shiftDistance = 306;
+let reservedShifted = 0;
 let unitInterval = null; // in minutes
 let numberOfDays = null;
 let firstDay = null;
@@ -40,7 +42,7 @@ let data = {events: null};
 let config = {venues: null};
 let numberOfVenues = null;
 let numberOfColumns = null;
-const megaData = {};
+let megaData = {};
 let reservedEvents =  {}
 // global variables ends
 
@@ -325,10 +327,10 @@ function createEventNode(event){
   }
   let endTime = new Date(event.start*1000);
   let startingDay = endTime.getDate();
-  endTime.setSeconds(endTime.getSeconds() + event.duration + 1);
+  endTime.setSeconds(endTime.getSeconds() + event.duration - 1);
   let endingDay = endTime.getDate();
   if(startingDay != endingDay){
-    console.log('overnight event is not supported',startingDay,endingDay);
+    console.log('overnight event is not supported',startingDay,endingDay, event);
     return false;
   }
   let newEvent = document.createElement('div');
@@ -518,8 +520,9 @@ function initializeCalendarBase(){
 
   // reserved area
   let reservedArea = document.createElement('div');
-  reservedArea.innerText = 'Reserved Area';
+  // reservedArea.innerText = 'Reserved Area';
   reservedArea.classList.add('reservedArea');
+  reservedArea.classList.add('zeroHeight');
   reservedElement = reservedArea;
   baseElement.appendChild(reservedArea);
 
@@ -551,6 +554,31 @@ function initializeCalendarBase(){
   let daysFrame = document.createElement('div');
   daysFrame.classList.add('daysFrame');
   dateScroll.appendChild(daysFrame);
+
+  let button1 = document.createElement('button');
+  button1.addEventListener('click', toggleShow);
+  button1.innerText = 'On/Off';
+  button1.classList.add('controlPenal');
+  dateHeader.appendChild(button1);
+  let button2 = document.createElement('button');
+  button2.addEventListener('click', resetPosition);
+  button2.innerText = 'Reset';
+  button2.classList.add('controlPenal');
+  dateHeader.appendChild(button2);
+  let shiftDiv = document.createElement('div');
+  shiftDiv.classList.add('controlPenal', 'flexParent');
+  let btnLeft = document.createElement('button');
+  btnLeft.addEventListener('click', shiftRight);
+  btnLeft.innerText = '<';
+  btnLeft.classList.add('controlPenal');
+  shiftDiv.appendChild(btnLeft);
+  let btnRight = document.createElement('button');
+  btnRight.addEventListener('click', shiftLeft);
+  btnRight.innerText = '>';
+  btnRight.classList.add('controlPenal');
+  shiftDiv.appendChild(btnRight);
+  dateHeader.appendChild(shiftDiv);
+
 
   let days = document.createElement('div');
   days.classList.add('days');
@@ -611,9 +639,15 @@ function initializeTimeArea(){
   }
 }
 
-function initializeEvents(){
-  for(let i = 0; i< data.events.length; i++){
-    createEventNode(data.events[i])
+function initializeEvents(events){
+  for(let i = 0; i< events.length; i++){
+    createEventNode(events[i])
+  }
+}
+
+function initializeReserve(reserves){
+  for(let i = 0; i< reserves.length; i++){
+    createReserveNode(reserves[i]);
   }
 }
 
@@ -636,24 +670,23 @@ function clearEvents(){
   clearChildNodes(originElement);
 }
 
-function initializeCalendar(interval, days, initDay, events, venues){
+function initializeCalendar(interval, days, initDay, events, venues, reserves = []){
   console.log("Initializing grid and events")
-  initializeGlobalVariables(interval, days, initDay, events, venues);
+  initializeGlobalVariables(interval, days, initDay, venues);
   initializeTimeArea();
   initializeTimeSlots();
   dyanamicallyInitializeDateColumn();
-  initializeEvents();
+  initializeEvents(events);
+  initializeReserve(reserves);
 }
 
-function initializeGlobalVariables(interval, days, initDay, events, venues){
+function initializeGlobalVariables(interval, days, initDay, venues){
   unitInterval = interval;
   numberOfDays = days;
   firstDay = new Date(initDay);
   firstDay.setMinutes(firstDay.getMinutes() + firstDay.getTimezoneOffset());
   lastDay = new Date(firstDay);
   lastDay.setDate(firstDay.getDate() + numberOfDays);
-
-  data.events = events;
 
   config.venues = venues;
 
@@ -664,8 +697,10 @@ function initializeGlobalVariables(interval, days, initDay, events, venues){
 function clearCalendar(){
   console.log("clearing grid and events");
   timeSlots = [];
+  megaData = {};
   clearTimeArea();
   clearEvents();
+  clearReserves();
   clearDateColumn();
 }
 
@@ -764,6 +799,162 @@ function buildCalendar(){
   previousScroll.top = scrollElement.scrollTop;
 }
 
+// reserved event
+// target elements with the "reservedEvent" class
+interact('.reservedEvent')
+.draggable({
+  snap: {
+    targets: [
+      function(x, y){
+        console.log(x,y);
+        let position = originElement.getBoundingClientRect();
+        let reservedPostion = reservedElement.getBoundingClientRect();
+        
+        if(y >= position.y && y <= reservedPostion.y){
+          let unitsX = Math.round((x - position.left)/ position.width);
+          if(unitsX < 0){
+            unitsX = 0;
+          }
+          if(unitsX >= numberOfColumns){
+            unitsX = numberOfColumns - 1;
+          }
+          let snapX = position.left + unitsX * position.width;
+          let unitsY = Math.round((y - position.top)/ timeUnit);
+          let snapY = position.top + unitsY * timeUnit;
+          if(currentElement != null){
+            console.log(reservedElement.getBoundingClientRect());
+            let duration = currentElement.getAttribute('duration');
+            let eventID = currentElement.getAttribute('eventID');
+            let occupationCheck = isOccupied(unitsX, unitsY, duration / 60 / unitInterval);
+            // console.log(occupationCheck, occupationCheck == false, occupationCheck === 0)
+            if(occupationCheck || occupationCheck === 0){
+              // do nothing
+              // console.log('occupied');
+              
+            } else {
+              // record attributes to create
+              // console.log('fired');
+              reserveToActive(unitsX, unitsY, eventID);
+              
+            }
+          }
+        }
+        return {x: 0, y:0};
+      }
+    ],
+    range: Infinity,
+    endOnly: true, // soft snapping
+    relativePoints: [ { x: 0, y: 0 } ]
+  },
+  onstart: (event)=>{
+    currentElement = event.target;
+  },
+  // call this function on every dragmove event
+  onmove: dragMoveListener,
+  // call this function on every dragend event
+  onend: function (event) {
+    event.target.style.webkitTransform =
+    event.target.style.transform =
+      'translate(' + 0 + 'px, ' + 0 + 'px)';
+    event.target.removeAttribute('data-x');
+    event.target.removeAttribute('data-y');
+    currentElement = null;
+    console.log('still fired')
+  }
+});
+
+function createEventObject(unitsX, unitsY, reservedEventID){
+  let start = new Date(firstDay);
+  let venueIndex = unitsX % numberOfVenues;
+  let venueID = config.venues[venueIndex].id;
+  start.setDate(start.getDate() + Math.floor(unitsX / numberOfVenues));
+  start.setMinutes(start.getMinutes() + unitsY * unitInterval);
+  reservedEvents[reservedEventID].venueID = venueID;
+  reservedEvents[reservedEventID].start = Math.floor(start.getTime()/1000);
+  return reservedEvents[reservedEventID];
+}
+
+function reserveToActive(unitsX, unitsY, eventID){
+  let newNode = createEventNode(createEventObject(unitsX, unitsY, eventID))
+  if(newNode){
+    updateDatabaseCall(newNode)
+    currentElement.parentNode.removeChild(currentElement);
+    delete reservedEvents[eventID];
+  }
+}
+
+function activeToReserved(id){
+  let target = document.getElementById('event-'+id);
+  let info = retriveInfo(target);
+  let event = {
+    id: info.eventID,
+    title: info.title, 
+    duration: info.duration, 
+    megaData: info.megaData,
+  };
+  console.log(info, event);
+  createReserveNode(event);
+  removeEvent(target);
+}
+const testReserveEvent = {
+  id: 111,
+  title:'test reserved event 101',
+  duration:7200,
+  megaData:{
+    note:'asdfjaskf',
+  },
+}
+
+function createReserveNode(event){
+  let reservedEvent = document.createElement('div');
+  reservedEvent.classList.add('reservedEvent');
+  reservedEvent.innerText = `Resereved Event ${event.title}`;
+  reservedEvent.setAttribute('duration', event);
+  reservedEvent.setAttribute('eventID', event.id);
+  
+  reservedEvents[event.id] = event;
+  reservedElement.appendChild(reservedEvent);
+}
+
+function clearReserves(){
+  clearChildNodes(reservedElement);
+}
+
+function shiftLeft(){
+  reservedShifted += shiftDistance;
+  reservedElement.style.webkitTransform =
+    reservedElement.style.transform =
+    'translate(-' + reservedShifted + 'px)';
+}
+
+function shiftRight(){
+  reservedShifted -= shiftDistance;
+  if(reservedShifted < 0){
+    reservedShifted = 0;
+  }
+  reservedElement.style.webkitTransform =
+    reservedElement.style.transform =
+    'translate(-' + reservedShifted + 'px)';
+}
+
+function resetPosition(){
+  reservedShifted = 0;
+  reservedElement.style.webkitTransform =
+    reservedElement.style.transform =
+    'translate(-' + reservedShifted + 'px)';
+}
+
+function toggleShow(event){
+  console.log(event.target)
+  reservedElement.classList.toggle('zeroHeight')
+}
+
+// export this
+function reloadReserve(newReserves){
+  clearReserves();
+  initializeReserve(newReserves);
+}
+
 // commented since it's server side module syntax
 // export {
 //   buildCalendar,
@@ -773,6 +964,7 @@ function buildCalendar(){
 //   deleteEvent,
 //   updateEventID,
 //   updateEventNode,
+//   reloadReserve,
 // };
 
 
@@ -890,7 +1082,82 @@ document.addEventListener('keypress', (event) => {
       // },
     ];
 
-    initializeCalendar(60, 7, '2018-02-25', events, venues);
+    let reserves = [
+      {
+        id: 111,
+        title:'test reserved event 111',
+        duration:7200,
+        megaData:{
+          note:'asdfjaskf',
+        },
+      },
+      {
+        id: 112,
+        title:'test reserved event 112',
+        duration:7200,
+        megaData:{
+          note:'asdfjaskf',
+        },
+      },{
+        id: 113,
+        title:'test reserved event 113',
+        duration:7200,
+        megaData:{
+          note:'asdfjaskf',
+        },
+      },{
+        id: 114,
+        title:'test reserved event 114',
+        duration:7200,
+        megaData:{
+          note:'asdfjaskf',
+        },
+      },{
+        id: 115,
+        title:'test reserved event 115',
+        duration:7200,
+        megaData:{
+          note:'asdfjaskf',
+        },
+      },{
+        id: 116,
+        title:'test reserved event 116',
+        duration:7200,
+        megaData:{
+          note:'asdfjaskf',
+        },
+      },{
+        id: 117,
+        title:'test reserved event 117',
+        duration:7200,
+        megaData:{
+          note:'asdfjaskf',
+        },
+      },{
+        id: 118,
+        title:'test reserved event 118',
+        duration:7200,
+        megaData:{
+          note:'asdfjaskf',
+        },
+      },{
+        id: 119,
+        title:'test reserved event 119',
+        duration:7200,
+        megaData:{
+          note:'asdfjaskf',
+        },
+      },{
+        id: 120,
+        title:'test reserved event 120',
+        duration:7200,
+        megaData:{
+          note:'asdfjaskf',
+        },
+      },
+    ]
+
+    initializeCalendar(60, 7, '2018-02-25', events, venues, reserves);
   }
   if(event.code == 'Digit7'){
     clearCalendar();
@@ -901,118 +1168,16 @@ document.addEventListener('keypress', (event) => {
   if(event.code == 'Digit5'){
     activeToReserved(3);
   }
-});
-
-
-// reserved event
-// target elements with the "draggable" class
-interact('.reservedEvent')
-.draggable({
-  snap: {
-    targets: [
-      function(x, y){
-        console.log(x,y);
-        let position = originElement.getBoundingClientRect();
-        let reservedPostion = reservedElement.getBoundingClientRect();
-        
-        if(y >= position.y && y <= reservedPostion.y){
-          let unitsX = Math.round((x - position.left)/ position.width);
-          if(unitsX < 0){
-            unitsX = 0;
-          }
-          if(unitsX >= numberOfColumns){
-            unitsX = numberOfColumns - 1;
-          }
-          let snapX = position.left + unitsX * position.width;
-          let unitsY = Math.round((y - position.top)/ timeUnit);
-          let snapY = position.top + unitsY * timeUnit;
-          if(currentElement != null){
-            console.log(reservedElement.getBoundingClientRect());
-            let duration = currentElement.getAttribute('duration');
-            let eventID = currentElement.getAttribute('eventID');
-            let occupationCheck = isOccupied(unitsX, unitsY, duration / 60 / unitInterval);
-            // console.log(occupationCheck, occupationCheck == false, occupationCheck === 0)
-            if(occupationCheck || occupationCheck === 0){
-              // do nothing
-              // console.log('occupied');
-              
-            } else {
-              // record attributes to create
-              // console.log('fired');
-              reserveToActive(unitsX, unitsY, eventID);
-              
-            }
-          }
-        }
-        return {x: 0, y:0};
-      }
-    ],
-    range: Infinity,
-    endOnly: true, // soft snapping
-    relativePoints: [ { x: 0, y: 0 } ]
-  },
-  onstart: (event)=>{
-    currentElement = event.target;
-  },
-  // call this function on every dragmove event
-  onmove: dragMoveListener,
-  // call this function on every dragend event
-  onend: function (event) {
-    event.target.style.webkitTransform =
-    event.target.style.transform =
-      'translate(' + 0 + 'px, ' + 0 + 'px)';
-      event.target.removeAttribute('data-x');
-      event.target.removeAttribute('data-y');
-      currentElement = null;
+  if(event.code == 'Digit4'){
+    toggleShow();
+  }
+  if(event.code == 'Digit1'){
+    shiftLeft();
+  }
+  if(event.code == 'Digit2'){
+    shiftRight();
+  }
+  if(event.code == 'Digit3'){
+    resetPosition();
   }
 });
-
-function createEventObject(unitsX, unitsY, reservedEventID){
-  let start = new Date(firstDay);
-  let venueIndex = unitsX % numberOfVenues;
-  let venueID = config.venues[venueIndex].id;
-  start.setDate(start.getDate() + Math.floor(unitsX / numberOfVenues));
-  start.setMinutes(start.getMinutes() + unitsY * unitInterval);
-  reservedEvents[reservedEventID].venueID = venueID;
-  reservedEvents[reservedEventID].start = Math.floor(start.getTime()/1000);
-  return reservedEvents[reservedEventID];
-}
-
-function reserveToActive(unitsX, unitsY, eventID){
-  updateDatabaseCall(createEventNode(createEventObject(unitsX, unitsY, eventID)))
-  currentElement.parentNode.removeChild(currentElement);
-  delete reservedEvents[eventID];
-}
-
-function activeToReserved(id){
-  let target = document.getElementById('event-'+id);
-  let info = retriveInfo(target);
-  let event = {
-    id: info.eventID,
-    title: info.title, 
-    duration: info.duration, 
-    megaData: info.megaData,
-  };
-  console.log(info, event);
-  createReserveNode(event);
-  removeEvent(target);
-}
-const testReserveEvent = {
-  id: 111,
-  title:'test reserved event 101',
-  duration:7200,
-  megaData:{
-    note:'asdfjaskf',
-  },
-}
-
-function createReserveNode(event){
-  let reservedEvent = document.createElement('div');
-  reservedEvent.classList.add('reservedEvent');
-  reservedEvent.innerText = `Resereved Event ${event.title}`;
-  reservedEvent.setAttribute('duration', event);
-  reservedEvent.setAttribute('eventID', event.id);
-  
-  reservedEvents[event.id] = event;
-  reservedElement.appendChild(reservedEvent);
-}
