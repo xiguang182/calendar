@@ -50,3 +50,6 @@ venueID:0}  
 ### Add a reserved area to contain events without starting time.
 * reserved evetns can be drag into main area and drop there to create a regular event via reserveToActive()
 * regular event can be 'archived' to reserved area via activeToReserve()
+# update 2018/03/28
+### Add a set of functions to manipulate reserved (stashed) events including a control penal for at dateHeader to shift reserve list.
+### export a new function reloadReserves() to be able to switch between different stash sets.
