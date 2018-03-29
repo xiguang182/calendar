@@ -1,0 +1,24 @@
+{
+  "name": "calendar",
+  "version": "1.0.0",
+  "description": "based on google calendar layout and css  \r visually highlighting dropping column for soft snapping using interact.js  \r synchronize time area and date area horizontal scrolling  \r function calculated snapping point  \r synchronize dragging while scrolling  \r all events are aligned to origin div(first event column div)  \r # update 2018/02/27 Mile Stone 1\r ### basic functionalities:  \r Dragging events, soft snapping (need adjustment to switch to hard snapping due to significantly more calls for snapping point function)  \r Event conflicts detection  \r Date column initialization  \r # update 2018/02/28\r ### Change unit concept and dynamic timeUnit render:  \r > the previous unit is related to the blick height which is set to 48px, that is when unit = 48 it means 1 block as a units, similarly 4px means 1/12 block as a units  \r > the new unit is fixed with block size, and the number of blocks will be dynamically rendered. That is, with smaller time interval, more blocks are created",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xiguang182/calendar.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/xiguang182/calendar/issues"
+  },
+  "homepage": "https://github.com/xiguang182/calendar#readme",
+  "devDependencies": {
+    "eslint": "^4.19.1",
+    "eslint-config-airbnb-base": "^12.1.0",
+    "eslint-plugin-import": "^2.9.0"
+  }
+}
