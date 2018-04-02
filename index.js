@@ -1,4 +1,3 @@
-/* eslint-disable no-param-reassign, max-len  */
 // commented server side syntax
 // import interact from 'interactjs';
 /**
@@ -135,20 +134,19 @@ window.onresize = (event) => {
   // console.log(events)
   for (let i = 0; i < events.length; i += 1) {
     const unitsX = events[i].getAttribute('unit-x') || 0;
-    if (unitsX === 0) {
-      continue;
+    if (unitsX !== 0) {
+      const y = parseFloat(events[i].getAttribute('data-y'));
+      const x = unitsX * position.width;
+
+      // translate the element
+      events[i].style.webkitTransform = `translate(${x}px, ${y}px)`;
+      events[i].style.transform = `translate(${x}px, ${y}px)`;
+
+
+      // update the posiion attributes
+      events[i].setAttribute('data-x', x);
+      events[i].setAttribute('data-y', y);
     }
-    const y = parseFloat(events[i].getAttribute('data-y'));
-    const x = unitsX * position.width;
-
-    // translate the element
-    events[i].style.webkitTransform = `translate(${x}px, ${y}px)`;
-    events[i].style.transform = `translate(${x}px, ${y}px)`;
-
-
-    // update the posiion attributes
-    events[i].setAttribute('data-x', x);
-    events[i].setAttribute('data-y', y);
   }
 
   // console.log(events);
@@ -208,13 +206,26 @@ function vacate(unitsX, unitsY, duration) {
 function muniteToAMPMClock(minutes) {
   const hour = Math.floor(minutes / 60);
   const minute = (`0${minutes % 60}`).slice(-2);
-  return hour > 12 ? hour == 24 ? `0:${minute}AM` : `${hour - 12}:${minute}PM` : hour == 12 ? `${hour}:${minute}PM` : `${hour}:${minute}AM`;
+  let str;
+  if (hour > 12) {
+    if (hour === 24) {
+      str = `0:${minute}AM`;
+    } else {
+      str = `${hour - 12}:${minute}PM`;
+    }
+  } else if (hour === 12) {
+    str = `12:${minute}PM`;
+  } else {
+    str = `${hour}:${minute}AM`;
+  }
+  return str;
+  // return hour > 12 ? hour == 24 ? `0:${minute}AM` : `${hour - 12}:${minute}PM` : hour == 12 ? `${hour}:${minute}PM` : `${hour}:${minute}AM`;
 }
 
 function compileTimeText(unitsY, duration) {
   const additionalMinutes = Math.floor(duration / 60);
   const startHours = muniteToAMPMClock(unitsY * unitInterval);
-  const endHours = muniteToAMPMClock(unitsY * unitInterval + additionalMinutes);
+  const endHours = muniteToAMPMClock((unitsY * unitInterval) + additionalMinutes);
   return `${startHours} - ${endHours}`;
 }
 
@@ -516,13 +527,13 @@ function initializeTimeArea() {
   const timeContainer = document.getElementById('timeContainer');
   const numberOfUnits = (24 * 60) / unitInterval;
   for (let i = 0; i < numberOfUnits; i += 1) {
-    const timeUnit = document.createElement('div');
-    timeUnit.classList.add('timeUnit');
+    const timeUnitBlock = document.createElement('div');
+    timeUnitBlock.classList.add('timeUnit');
     const unitBlock = document.createElement('span');
     unitBlock.classList.add('unitBlock');
     unitBlock.innerHTML = muniteToAMPMClock((24 * 60 * i) / numberOfUnits);
-    timeUnit.appendChild(unitBlock);
-    timeContainer.appendChild(timeUnit);
+    timeUnitBlock.appendChild(unitBlock);
+    timeContainer.appendChild(timeUnitBlock);
 
     const gridRow = document.createElement('div');
     gridRow.classList.add('grid-row');
@@ -610,7 +621,7 @@ function retriveInfo(element) {
   const venueIndex = unitsX % numberOfVenues;
   const venueID = config.venues[venueIndex].id;
   start.setDate(start.getDate() + Math.floor(unitsX / numberOfVenues));
-  start.setMinutes(start.getMinutes() + unitsY * unitInterval);
+  start.setMinutes(start.getMinutes() + (unitsY * unitInterval));
   return {
     start, duration, venueID, eventID, title, megaData: extraData,
   };
@@ -656,6 +667,7 @@ function recoverEventNode(removedEvent) {
   const duration = removedEvent.getAttribute('duration');
   occupy(unitsX, unitsY, duration);
   originElement.appendChild(removedEvent);
+  return true;
 }
 
 function updateEventNode(event) {
@@ -690,7 +702,7 @@ function createEventObject(unitsX, unitsY, reservedEventID) {
   const venueIndex = unitsX % numberOfVenues;
   const venueID = config.venues[venueIndex].id;
   start.setDate(start.getDate() + Math.floor(unitsX / numberOfVenues));
-  start.setMinutes(start.getMinutes() + unitsY * unitInterval);
+  start.setMinutes(start.getMinutes() + (unitsY * unitInterval));
   reservedEvents[reservedEventID].venueID = venueID;
   reservedEvents[reservedEventID].start = Math.floor(start.getTime() / 1000);
   return reservedEvents[reservedEventID];
